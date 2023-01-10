@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove=".gitignore" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <Title>zip2</Title>
+    <PackageId>zip2</PackageId>
+    <PackageVersion>2.0.0.0</PackageVersion>
+    <Version>2.0.0.0</Version>
+    <Authors>Yung, Chun Kau</Authors>
+    <Description>Command line tool for zip file.</Description>
+    <Summary>
+       C# source https://github.com/ck-yung/zip2.
+   </Summary>
+    <PackageTags>zip</PackageTags>
+    <PackAsTool>true</PackAsTool>
+    <Company>https://github.com/ck-yung/zip2</Company>
+    <ToolCommandName>zip2</ToolCommandName>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+    <PackageReleaseNotes>Migrate to the common syntax of command-line argument.</PackageReleaseNotes>
+    <PackageTags>zip</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Copyright>Copyright (c) 2021,2023 Yung, Chun Kau</Copyright>
+    <PackageLicense>GPL-3.0 License</PackageLicense>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageProjectUrl>https://github.com/ck-yung/zip2</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ck-yung/zip2</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageDependencies></PackageDependencies>
+    <PackageDevelopmentDependency></PackageDevelopmentDependency>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+  </PropertyGroup>
+</Project>
