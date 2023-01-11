@@ -63,6 +63,7 @@ public class List : ICommandMaker
             return false;
         }
 
+        var wildNames = Helper.ToWildPredicate(args);
         var ins = My.OpenZip.Invoke(true);
         if (ins == Stream.Null)
         {
@@ -71,7 +72,9 @@ public class List : ICommandMaker
         }
 
         var inpZs = new ZipInputStream(ins);
-        SumZipEntry sumThe = GetEntries(inpZs).Invoke(My.SumZip.Invoke);
+        var sumThe = GetEntries(inpZs)
+            .Where((it) => wildNames(Path.GetFileName(it.Name)))
+            .Invoke(My.SumZip.Invoke);
         ins.Close();
         Console.WriteLine(sumThe.ToString());
         return true;
@@ -127,19 +130,6 @@ internal class SumZipEntry
 
 static internal partial class My
 {
-    static internal R Invoke<T, R>(this IEnumerable<T> seq,
-        Func<IEnumerable<T>, R> func)
-    {
-        return func(seq);
-    }
-
-    static internal string GetFirstDirPart(string path)
-    {
-        var aa = path.Split(new char[] { '/', '\\' }, 2);
-        if (aa.Length == 1) return ".";
-        return aa[0];
-    }
-
     static internal IInvokeOption<IEnumerable<ZipEntry>, SumZipEntry> SumZip
         = new SingleValueOption<IEnumerable<ZipEntry>, SumZipEntry>(
             "--sum", help: "ext | dir",
@@ -161,7 +151,7 @@ static internal partial class My
                 {
                     case "dir":
                         return (seq) => seq
-                        .GroupBy((it) => GetFirstDirPart(it.Name))
+                        .GroupBy((it) => Helper.GetFirstDirPart(it.Name))
                         .ToImmutableDictionary((grp) => grp.Key,
                         (grp) => grp.Aggregate(
                             seed: new SumZipEntry(grp.Key),

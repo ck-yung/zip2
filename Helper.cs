@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace zip2;
 static class Helper
@@ -72,6 +73,7 @@ static class Helper
     {
         PrintHelp(opts, MyCommand.EmptyShortcutArrays);
     }
+
     internal static void PrintHelp(ImmutableArray<IOption> opts,
         ImmutableDictionary<string, string[]> shortcutArrays)
     {
@@ -98,5 +100,48 @@ static class Helper
                 Console.WriteLine(string.Join(" ", scThe.Value));
             }
         }
+    }
+
+    static internal R Invoke<T, R>(this IEnumerable<T> seq,
+    Func<IEnumerable<T>, R> func)
+    {
+        return func(seq);
+    }
+
+    static internal string GetFirstDirPart(string path)
+    {
+        var aa = path.Split(new char[] { '/', '\\' }, 2);
+        if (aa.Length == 1) return ".";
+        return aa[0];
+    }
+
+    static internal Func<string, bool> ToWildPredicate(string[] args)
+    {
+        string ToRegexText(string text)
+        {
+            var regText = new System.Text.StringBuilder("^");
+            regText.Append(text
+                .Replace(@"\", @"\\")
+                .Replace("^", @"\^")
+                .Replace("$", @"\$")
+                .Replace(".", @"\.")
+                .Replace("?", ".")
+                .Replace("*", ".*")
+                .Replace("(", @"\(")
+                .Replace(")", @"\)")
+                .Replace("[", @"\[")
+                .Replace("]", @"\]")
+                .Replace("{", @"\{")
+                .Replace("}", @"\}")
+                ).Append('$');
+            return regText.ToString();
+        }
+
+        var funcs = args.AsEnumerable()
+            .Select((it) => ToRegexText(it))
+            .Select((it) => new Regex(it, RegexOptions.IgnoreCase))
+            .ToArray();
+        if (funcs.Length == 0) return (_) => true;
+        return (arg) => funcs.Any((it) => it.Match(arg).Success);
     }
 }

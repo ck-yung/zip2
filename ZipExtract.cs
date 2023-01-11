@@ -49,9 +49,11 @@ public class Extract : ICommandMaker
             return false;
         }
 
+        var wildNames = Helper.ToWildPredicate(args);
         var inpZs = new ZipInputStream(ins);
         var count = List.GetEntries(inpZs)
             .Where((it) => it.IsFile)
+            .Where((it) => wildNames(Path.GetFileName(it.Name)))
             .Select((it) =>
             {
                 var targetFilename = My.ToOutDir.Invoke(
