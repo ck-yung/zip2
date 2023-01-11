@@ -18,6 +18,7 @@ public class List : ICommandMaker
     static ImmutableArray<IOption> MyOptions = new IOption[]
     {
         (IOption) My.OpenZip,
+        (IOption) My.ExclFiles,
         (IOption) My.SumZip,
     }.ToImmutableArray();
 
@@ -74,6 +75,8 @@ public class List : ICommandMaker
         var inpZs = new ZipInputStream(ins);
         var sumThe = GetEntries(inpZs)
             .Where((it) => wildNames(Path.GetFileName(it.Name)))
+            .Where((it) => false == My.ExclFiles.Invoke(
+                Path.GetFileName(it.Name)))
             .Invoke(My.SumZip.Invoke);
         ins.Close();
         Console.WriteLine(sumThe.ToString());
@@ -184,5 +187,4 @@ static internal partial class My
                             $"'{arg}' is bad to {the.Name}");
                 }
             });
-
 }

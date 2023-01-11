@@ -19,6 +19,7 @@ public class Extract : ICommandMaker
         (IOption) My.OpenZip,
         (IOption) My.ToOutDir,
         (IOption) My.Overwrite,
+        (IOption) My.ExclFiles,
     }.ToImmutableArray();
 
     class CommandThe : MyCommand
@@ -54,6 +55,8 @@ public class Extract : ICommandMaker
         var count = List.GetEntries(inpZs)
             .Where((it) => it.IsFile)
             .Where((it) => wildNames(Path.GetFileName(it.Name)))
+            .Where((it) => false == My.ExclFiles.Invoke(
+                Path.GetFileName(it.Name)))
             .Select((it) =>
             {
                 var targetFilename = My.ToOutDir.Invoke(

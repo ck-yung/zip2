@@ -49,4 +49,18 @@ static internal partial class My
                 return File.Create(path);
             },
             alt: (path) => File.Create(path));
+
+    static internal readonly IInvokeOption<string, bool> ExclFiles
+        = new ManyValuesOption<string, bool>("--excl", help: "WILD[,WILD,..]",
+            init: (_) => false, resolve: (the, args) =>
+            {
+                var aa = args
+                .Select((it) => it.Split(',',';'))
+                .SelectMany((it) => it)
+                .Where((it) => it.Length > 0)
+                .Distinct()
+                .ToArray();
+                if (aa.Length == 0) return (_) => false;
+                return Helper.ToWildPredicate(aa);
+            });
 }
