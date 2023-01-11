@@ -1,12 +1,11 @@
 using ICSharpCode.SharpZipLib.Zip;
 using System.Collections.Immutable;
-using static ICSharpCode.SharpZipLib.Zip.FastZip;
 
 namespace zip2;
 
 [Command(name: "--extract", shortcut: "-x", help: """
       zip2 -xf ZIP-FILE
-      zip2 --extract --file ZIP-FILE    
+      zip2 --extract --file ZIP-FILE
     """)]
 public class Extract : ICommandMaker
 {

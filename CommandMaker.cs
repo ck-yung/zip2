@@ -48,7 +48,7 @@ internal partial class CommandMaker
 
         IEnumerable<string> ExpandFromShortcut()
         {
-            var shortcutsThe = Helper.MainShortcuts.Value!;
+            var shortcutsThe = Helper.MainShortcuts.Value;
             var it = ExpandCombiningShortcut().GetEnumerator();
             while (it.MoveNext())
             {
@@ -125,9 +125,9 @@ internal partial class CommandMaker
 
 public class MyCommand
 {
-    internal readonly ImmutableDictionary<string, string> EmptyShortcuts
+    static internal readonly ImmutableDictionary<string, string> EmptyShortcuts
         = ImmutableDictionary<string, string>.Empty;
-    internal readonly ImmutableDictionary<string, string[]> EmptyShortcutArrays
+    static internal readonly ImmutableDictionary<string, string[]> EmptyShortcutArrays
         = ImmutableDictionary<string, string[]>.Empty;
 
     public Func<string[], bool> Invoke { get; init; }
@@ -204,6 +204,15 @@ public class MyCommand
     {
         Invoke = invoke;
         ShortcutArrays = EmptyShortcutArrays;
+        Options = options;
+    }
+
+    public MyCommand(Func<string[], bool> invoke,
+        ImmutableArray<IOption> options,
+        ImmutableDictionary<string, string[]> shortcutArrays)
+    {
+        Invoke = invoke;
+        ShortcutArrays = shortcutArrays;
         Options = options;
     }
 

@@ -70,6 +70,11 @@ static class Helper
 
     internal static void PrintHelp(ImmutableArray<IOption> opts)
     {
+        PrintHelp(opts, MyCommand.EmptyShortcutArrays);
+    }
+    internal static void PrintHelp(ImmutableArray<IOption> opts,
+        ImmutableDictionary<string, string[]> shortcutArrays)
+    {
         Console.WriteLine("OPTION:");
         foreach (var opt in opts)
         {
@@ -81,6 +86,16 @@ static class Helper
             else
             {
                 Console.WriteLine($"  {opt.Name,12}  {opt.Shortcut}  {opt.Help}");
+            }
+        }
+
+        if (shortcutArrays.Any())
+        {
+            Console.WriteLine("SHORTCUT:");
+            foreach (var scThe in shortcutArrays)
+            {
+                Console.Write($"  {scThe.Key}   ");
+                Console.WriteLine(string.Join(" ", scThe.Value));
             }
         }
     }

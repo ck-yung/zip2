@@ -4,9 +4,9 @@ using System.Text;
 
 namespace zip2;
 
-[Command(name: "--list", shortcut: "-l", help: """
-      zip2 -lf ZIP-FILE
-      zip2 --list --file ZIP-FILE    
+[Command(name: "--list", shortcut: "-t", help: """
+      zip2 -tf ZIP-FILE
+      zip2 --list --file ZIP-FILE
     """)]
 public class List : ICommandMaker
 {
