@@ -64,6 +64,7 @@ public class Create : ICommandMaker
     {
         (IOption) My.OpenZip,
         (IOption) My.CompressLevel,
+        (IOption) My.FilesFrom,
     }.ToImmutableArray();
 
     static ImmutableDictionary<string, string[]> MyShortcutArrays =
@@ -113,8 +114,10 @@ public class Create : ICommandMaker
         int cntAdded = 0;
         var outZs = new ZipOutputStream(ins);
         My.CompressLevel.Invoke(outZs);
-        foreach (var path in args
-            .Where((it) => File.Exists(it)))
+        foreach (var path in args.Concat(My.FilesFrom.Invoke(true))
+            .Select((it) => Helper.ToLocalFilename(it))
+            .Where((it) => File.Exists(it))
+            .Distinct())
         {
             var sizeThe = (new FileInfo(path)).Length;
             var entry = new ZipEntry(Helper.ToStandFilename(path))
