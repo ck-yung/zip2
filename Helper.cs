@@ -94,7 +94,8 @@ static class Helper
         if (shortcutArrays.Any())
         {
             Console.WriteLine("SHORTCUT:");
-            foreach (var scThe in shortcutArrays)
+            foreach (var scThe in shortcutArrays
+                .OrderBy((it) => it.Key))
             {
                 Console.Write($"  {scThe.Key}   ");
                 Console.WriteLine(string.Join(" ", scThe.Value));

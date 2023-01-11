@@ -50,8 +50,7 @@ static internal partial class My
 }
 
 [Command(name: "--create", shortcut: "-c", help: """
-      zip2 -cf NEW-ZIP
-      zip2 --create --file NEW-ZIP
+      zip2 -cf NEW-ZIP [OPTION ..] FILE [FILE ..]
     """)]
 public class Create : ICommandMaker
 {
@@ -92,13 +91,17 @@ public class Create : ICommandMaker
             Console.WriteLine(
                 """
                 create zip file:
-                  zip2 -cf NEW-ZIP [OPTION ..]
+                  zip2 -cf NEW-ZIP [OPTION ..] FILE [FILE ..]
+                  zip2 -cf NEW-ZIP [OPTION ..] -T - [FILE ..]
+                For example,
+                  dir2 src -bsk --within 2hour | zip2 -c3f ../today.zip -T -
+
                 """);
             Helper.PrintHelp(MyOptions, MyShortcutArrays);
             return false;
         }
 
-        var ins = My.OpenZip.Invoke(false);
+        var ins = My.OpenZip.Invoke((false, "'zip2 -c?' for help"));
         if (ins == Stream.Null)
         {
             Console.WriteLine("Create failed.");

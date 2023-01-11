@@ -6,8 +6,7 @@ using System.Text;
 namespace zip2;
 
 [Command(name: "--list", shortcut: "-t", help: """
-      zip2 -tf ZIP-FILE
-      zip2 --list --file ZIP-FILE
+      zip2 -tf ZIP-FILE [OPTION ..] [WILD ..]
     """)]
 public class List : ICommandMaker
 {
@@ -60,7 +59,7 @@ public class List : ICommandMaker
             Console.WriteLine(
                 """
                 List zip file:
-                  zip2 -tf ZIP-FILE [OPTION ..]
+                  zip2 -tf ZIP-FILE [OPTION ..] [WILD ..]
                 """);
             Helper.PrintHelp(MyOptions);
             return false;
@@ -85,7 +84,7 @@ public class List : ICommandMaker
                 wildNames(Path.GetFileName(it.Name)),
             };
 
-        var ins = My.OpenZip.Invoke(true);
+        var ins = My.OpenZip.Invoke((true, "'zip2 -t?' for help"));
         if (ins == Stream.Null)
         {
             Console.WriteLine("Open failed.");

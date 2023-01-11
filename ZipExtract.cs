@@ -4,8 +4,7 @@ using System.Collections.Immutable;
 namespace zip2;
 
 [Command(name: "--extract", shortcut: "-x", help: """
-      zip2 -xf ZIP-FILE
-      zip2 --extract --file ZIP-FILE
+      zip2 -xf ZIP-FILE [OPTION ..] [WILD ..]
     """)]
 public class Extract : ICommandMaker
 {
@@ -38,13 +37,13 @@ public class Extract : ICommandMaker
             Console.WriteLine(
                 """
                 Extract zip file:
-                  zip2 -xf ZIP-FILE [OPTION ..]
+                  zip2 -xf ZIP-FILE [OPTION ..] [WILD ..]
                 """);
             Helper.PrintHelp(MyOptions);
             return false;
         }
 
-        var ins = My.OpenZip.Invoke(true);
+        var ins = My.OpenZip.Invoke((true, "'zip2 -x?' for help"));
         if (ins == Stream.Null)
         {
             Console.WriteLine("Open failed.");
