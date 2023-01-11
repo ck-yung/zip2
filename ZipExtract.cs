@@ -20,6 +20,7 @@ public class Extract : ICommandMaker
         (IOption) My.ToOutDir,
         (IOption) My.Overwrite,
         (IOption) My.ExclFiles,
+        (IOption) My.FilesFrom,
     }.ToImmutableArray();
 
     class CommandThe : MyCommand
@@ -51,10 +52,28 @@ public class Extract : ICommandMaker
         }
 
         var wildNames = Helper.ToWildPredicate(args);
+
+        var namesFromFile = My.FilesFrom.Invoke(true)
+            .Where((it) => it.Length > 0)
+            .Distinct()
+            .Select((it) => Helper.ToStandFilename(it))
+            .ToArray();
+
+        Func<ZipEntry, bool> checkZipEntryName =
+            (args.Length, namesFromFile.Length) switch
+            {
+                (0, 0) => (_) => true,
+                ( > 0, 0) => (it) => wildNames(Path.GetFileName(it.Name)),
+                (0, > 0) => (it) => namesFromFile.Contains(it.Name),
+
+                _ => (it) => namesFromFile.Contains(it.Name) ||
+                wildNames(Path.GetFileName(it.Name)),
+            };
+
         var inpZs = new ZipInputStream(ins);
         var count = List.GetEntries(inpZs)
             .Where((it) => it.IsFile)
-            .Where((it) => wildNames(Path.GetFileName(it.Name)))
+            .Where((it) => checkZipEntryName(it))
             .Where((it) => false == My.ExclFiles.Invoke(
                 Path.GetFileName(it.Name)))
             .Select((it) =>

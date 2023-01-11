@@ -1,5 +1,6 @@
 using ICSharpCode.SharpZipLib.Zip;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 
 namespace zip2;
@@ -20,6 +21,7 @@ public class List : ICommandMaker
         (IOption) My.OpenZip,
         (IOption) My.ExclFiles,
         (IOption) My.SumZip,
+        (IOption) My.FilesFrom,
     }.ToImmutableArray();
 
     class CommandThe : MyCommand
@@ -65,6 +67,24 @@ public class List : ICommandMaker
         }
 
         var wildNames = Helper.ToWildPredicate(args);
+
+        var namesFromFile = My.FilesFrom.Invoke(true)
+            .Where((it) => it.Length > 0)
+            .Distinct()
+            .Select((it) => Helper.ToStandFilename(it))
+            .ToArray();
+
+        Func<ZipEntry, bool> checkZipEntryName =
+            (args.Length, namesFromFile.Length) switch
+            {
+                (0, 0) => (_) => true,
+                (> 0, 0) => (it) => wildNames(Path.GetFileName(it.Name)),
+                (0, > 0) => (it) => namesFromFile.Contains(it.Name),
+
+                _ => (it) => namesFromFile.Contains(it.Name) ||
+                wildNames(Path.GetFileName(it.Name)),
+            };
+
         var ins = My.OpenZip.Invoke(true);
         if (ins == Stream.Null)
         {
@@ -74,7 +94,7 @@ public class List : ICommandMaker
 
         var inpZs = new ZipInputStream(ins);
         var sumThe = GetEntries(inpZs)
-            .Where((it) => wildNames(Path.GetFileName(it.Name)))
+            .Where((it) => checkZipEntryName(it))
             .Where((it) => false == My.ExclFiles.Invoke(
                 Path.GetFileName(it.Name)))
             .Invoke(My.SumZip.Invoke);

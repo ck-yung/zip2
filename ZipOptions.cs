@@ -6,7 +6,7 @@ static internal partial class My
 
     static internal IInvokeOption<bool, Stream> OpenZip
         = new SingleValueOption<bool, Stream>(
-            "--file", shortcut: "-f",
+            "--file", help: "ZIP-FILENAME", shortcut: "-f",
             init: (_) => throw new MyArgumentException(
                 "Zip file is required by '--file' or '-f'."),
             resolve: (the, arg) =>
@@ -31,7 +31,7 @@ static internal partial class My
 
     static internal IInvokeOption<string, string> ToOutDir
         = new SingleValueOption<string, string>(
-            "--out-dir", shortcut: "-O",
+            "--out-dir", help: "OUTPUT-DIR", shortcut: "-O",
             init: (it) => it,
             resolve: (the, arg) =>
             {
@@ -62,5 +62,30 @@ static internal partial class My
                 .ToArray();
                 if (aa.Length == 0) return (_) => false;
                 return Helper.ToWildPredicate(aa);
+            });
+
+    static internal IInvokeOption<bool, IEnumerable<string>> FilesFrom
+        = new SingleValueOption<bool, IEnumerable<string>>(
+            "--files-from", help: "FILES-FROM", shortcut: "-T",
+            init: (_) => Enumerable.Empty<string>(),
+            resolve: (the, arg) =>
+            {
+                IEnumerable<string> ReadNamesFrom(string fromFile)
+                {
+                    var filesFromStream = File.OpenText(arg);
+                    string? lineThe;
+                    while (null != (lineThe = filesFromStream.ReadLine()))
+                    {
+                        yield return lineThe.Trim();
+                    }
+                }
+
+                if (false == File.Exists(arg))
+                {
+                    throw new MyArgumentException(
+                        $"But files-file '{arg}' is NOT found!");
+                }
+
+                return (_) => ReadNamesFrom(arg);
             });
 }
