@@ -18,6 +18,7 @@ public class List : ICommandMaker
     static ImmutableArray<IOption> MyOptions = new IOption[]
     {
         (IOption) My.OpenZip,
+        (IOption) My.SumZip,
     }.ToImmutableArray();
 
     class CommandThe : MyCommand
@@ -70,17 +71,7 @@ public class List : ICommandMaker
         }
 
         var inpZs = new ZipInputStream(ins);
-        var sumThe = GetEntries(inpZs)
-            .Select((it) =>
-            {
-                Console.Write(it.IsCrypted ? '*' : ' ');
-                Console.Write($"{KiloSize(it.Size)} ");
-                Console.Write($"{it.DateTime:yyyy-MM-dd HH:mm} ");
-                Console.WriteLine(it.Name);
-                return it;
-            })
-            .Aggregate(seed: new SumZipEntry(Path.GetFileName(My.ZipFilename)),
-            func: (acc, it) => acc.AddWith(it));
+        SumZipEntry sumThe = GetEntries(inpZs).Invoke(My.SumZip.Invoke);
         ins.Close();
         Console.WriteLine(sumThe.ToString());
         return true;
@@ -132,4 +123,76 @@ internal class SumZipEntry
         if (other.IsCrypted) IsCrypted = true;
         return this;
     }
+}
+
+static internal partial class My
+{
+    static internal R Invoke<T, R>(this IEnumerable<T> seq,
+        Func<IEnumerable<T>, R> func)
+    {
+        return func(seq);
+    }
+
+    static internal string GetFirstDirPart(string path)
+    {
+        var aa = path.Split(new char[] { '/', '\\' }, 2);
+        if (aa.Length == 1) return ".";
+        return aa[0];
+    }
+
+    static internal IInvokeOption<IEnumerable<ZipEntry>, SumZipEntry> SumZip
+        = new SingleValueOption<IEnumerable<ZipEntry>, SumZipEntry>(
+            "--sum", help: "ext | dir",
+            init: (seq) => seq
+            .Select((it) =>
+            {
+                Console.Write(it.IsCrypted ? '*' : ' ');
+                Console.Write($"{List.KiloSize(it.Size)} ");
+                Console.Write($"{it.DateTime:yyyy-MM-dd HH:mm} ");
+                Console.WriteLine(it.Name);
+                return it;
+            })
+            .Aggregate(
+                seed: new SumZipEntry(Path.GetFileName(My.ZipFilename) ?? "."),
+                func: (acc, it) => acc.AddWith(it)),
+            resolve: (the, arg) =>
+            {
+                switch (arg)
+                {
+                    case "dir":
+                        return (seq) => seq
+                        .GroupBy((it) => GetFirstDirPart(it.Name))
+                        .ToImmutableDictionary((grp) => grp.Key,
+                        (grp) => grp.Aggregate(
+                            seed: new SumZipEntry(grp.Key),
+                            func: (acc, it) => acc.AddWith(it)))
+                        .Select((grp) =>
+                        {
+                            Console.WriteLine(grp.Value.ToString());
+                            return grp.Value;
+                        })
+                        .Aggregate(
+                            seed: new SumZipEntry(Path.GetFileName(My.ZipFilename) ?? "."),
+                            func: (acc, it) => acc.AddWith(it));
+                    case "ext":
+                        return (seq) => seq
+                        .GroupBy((it) => Path.GetExtension(it.Name) ?? "*no-ext*")
+                        .ToImmutableDictionary((grp) => grp.Key,
+                        (grp) => grp.Aggregate(
+                            seed: new SumZipEntry(grp.Key),
+                            func: (acc, it) => acc.AddWith(it)))
+                        .Select((grp) =>
+                        {
+                            Console.WriteLine(grp.Value.ToString());
+                            return grp.Value;
+                        })
+                        .Aggregate(
+                            seed: new SumZipEntry(Path.GetFileName(My.ZipFilename) ?? "."),
+                            func: (acc, it) => acc.AddWith(it));
+                    default:
+                        throw new MyArgumentException(
+                            $"'{arg}' is bad to {the.Name}");
+                }
+            });
+
 }
