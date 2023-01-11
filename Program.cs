@@ -6,16 +6,43 @@ class Program
     {
 		try
 		{
+            if (args.Length == 0)
+            {
+                Console.WriteLine(
+                    $"""
+                    For more info, please run
+                      {Helper.ExeName} -?
+                    """);
+                return;
+            }
+
             RunMain(args);
 		}
-		catch (Exception ee)
+		catch (MyArgumentException ae)
 		{
-			Console.WriteLine(ee);
+			Console.WriteLine(ae.Message);
 		}
+        catch (Exception ee)
+        {
+            Console.WriteLine(ee);
+        }
     }
 
-    static public void RunMain(string[] args)
+    static public bool RunMain(string[] args)
     {
-        Console.WriteLine($"RunMain #args:{args.Length}");
+        args = CommandMaker.Parse(args,
+            out MyCommand commandThe);
+        if (commandThe.IsFake())
+        {
+            Console.WriteLine(
+                $"""
+                No command is found.
+                For more info, please run
+                  {Helper.ExeName} -?
+                """);
+            return false;
+        }
+
+        return commandThe.Invoke(args);
     }
 }
