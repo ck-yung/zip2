@@ -43,6 +43,11 @@ class Program
             return false;
         }
 
+        args = commandThe.Parse(args
+            .AsEnumerable()
+            .Select((it) => (false, it)))
+            .Select((it) => (it.Item2))
+            .ToArray();
         return commandThe.Invoke(args);
     }
 }

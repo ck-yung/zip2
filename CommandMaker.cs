@@ -74,7 +74,23 @@ internal partial class CommandMaker
                 .ToImmutableDictionary((grp) => grp.Key, (grp) => grp);
             if (aa.ContainsKey(true))
             {
-                var bb = aa[true].Distinct().Take(2).ToArray();
+                var bb = aa[true].Distinct().Take(3).ToArray();
+                if ((bb.Length == 2))
+                {
+                    int cmdFound = -1;
+                    if (bb[0] == "--help") cmdFound = 1;
+                    else if (bb[1] == "--help") cmdFound = 0;
+                    if (cmdFound > -1)
+                    {
+                        if (Activator.CreateInstance(NamedCommands[bb[cmdFound]])
+                            is ICommandMaker b3)
+                        {
+                            myCommand = b3.Make();
+                        }
+                        return new string[] { "--help" };
+                    }
+                }
+
                 if (bb.Length > 1)
                 {
                     throw new MyArgumentException(
@@ -109,10 +125,94 @@ internal partial class CommandMaker
 
 public class MyCommand
 {
+    internal readonly ImmutableDictionary<string, string> EmptyShortcuts
+        = ImmutableDictionary<string, string>.Empty;
+    internal readonly ImmutableDictionary<string, string[]> EmptyShortcutArrays
+        = ImmutableDictionary<string, string[]>.Empty;
+
     public Func<string[], bool> Invoke { get; init; }
+    readonly ImmutableDictionary<string, string[]> ShortcutArrays;
+    public ImmutableArray<IOption> Options { get; init; }
+
+    public IEnumerable<(bool, string)> Parse(IEnumerable<(bool, string)> mainArgs)
+    {
+        var shortcuts = Options
+            .Where((it) => it.Shortcut.Length > 0)
+            .ToImmutableDictionary((it) => it.Shortcut, (it) => it.Name);
+        IEnumerable<(bool, string)> ExpandShortcuts()
+        {
+            var it = mainArgs.GetEnumerator();
+            while (it.MoveNext())
+            {
+                var current = it.Current;
+                if (shortcuts.TryGetValue(current.Item2,
+                    out string? value))
+                {
+                    yield return (current.Item1, value);
+                }
+                else if (ShortcutArrays.TryGetValue(current.Item2,
+                    out string[]? values))
+                {
+                    foreach (var value2 in values)
+                    {
+                        yield return (current.Item1, value2);
+                    }
+                }
+                else
+                {
+                    yield return current;
+                }
+            }
+        }
+
+        var args = ExpandShortcuts();
+        foreach (var opt in Options)
+        {
+            var mapThe = opt.Parse(args)
+                .GroupBy((it) => it.Item1)
+                .ToImmutableDictionary((grp) => grp.Key, (grp) => grp);
+
+            if (mapThe.ContainsKey(true))
+            {
+                opt.Resolve(opt, mapThe[true]
+                    .Select((it) => it.Item2)
+                    .Where((it) => it.Length > 0)
+                    .Distinct());
+            }
+
+            if (mapThe.ContainsKey(false))
+            {
+                args = mapThe[false];
+            }
+            else
+            {
+                return Array.Empty<(bool, string)>();
+            }
+        }
+        return args;
+    }
+
     public MyCommand(Func<string[], bool> invoke)
     {
         Invoke = invoke;
+        ShortcutArrays = EmptyShortcutArrays;
+        Options = Array.Empty<IOption>().ToImmutableArray();
+    }
+
+    public MyCommand(Func<string[], bool> invoke,
+        ImmutableArray<IOption> options)
+    {
+        Invoke = invoke;
+        ShortcutArrays = EmptyShortcutArrays;
+        Options = options;
+    }
+
+    public MyCommand(Func<string[], bool> invoke,
+        ImmutableDictionary<string, string[]> shortcutArrays)
+    {
+        Invoke = invoke;
+        ShortcutArrays = shortcutArrays;
+        Options = Array.Empty<IOption>().ToImmutableArray();
     }
 
     private MyCommand(bool flag)
@@ -121,6 +221,8 @@ public class MyCommand
         {
             throw new NotImplementedException("Fake command");
         };
+        ShortcutArrays = EmptyShortcutArrays;
+        Options = Array.Empty<IOption>().ToImmutableArray();
     }
 
     static public readonly MyCommand Fake = new(false);

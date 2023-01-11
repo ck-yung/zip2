@@ -53,4 +53,21 @@ static class Helper
         GetMainCommands()
         .Where((it) => it.Item1.Name.Length > 0)
         .ToImmutableDictionary((it) => it.Item1.Name, (it2) => it2.Item2));
+
+    internal static void PrintHelp(ImmutableArray<IOption> opts)
+    {
+        Console.WriteLine("OPTION:");
+        foreach (var opt in opts)
+        {
+            if (string.IsNullOrEmpty(opt.Shortcut))
+            {
+                //nsole.WriteLine($"  {opt.Name,12}  --  {opt.Help}");
+                Console.WriteLine($"  {opt.Name,12}      {opt.Help}");
+            }
+            else
+            {
+                Console.WriteLine($"  {opt.Name,12}  {opt.Shortcut}  {opt.Help}");
+            }
+        }
+    }
 }
