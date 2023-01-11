@@ -72,7 +72,21 @@ static internal partial class My
             {
                 IEnumerable<string> ReadNamesFrom(string fromFile)
                 {
-                    var filesFromStream = File.OpenText(arg);
+                    StreamReader filesFromStream;
+                    if (fromFile == "-")
+                    {
+                        if (false == Console.IsInputRedirected)
+                        {
+                            throw new MyArgumentException(
+                                "But console input is NOT redirected.");
+                        }
+                        filesFromStream = new StreamReader(Console.OpenStandardInput());
+                    }
+                    else
+                    {
+                        filesFromStream = File.OpenText(arg);
+                    }
+
                     string? lineThe;
                     while (null != (lineThe = filesFromStream.ReadLine()))
                     {
@@ -80,7 +94,7 @@ static internal partial class My
                     }
                 }
 
-                if (false == File.Exists(arg))
+                if (false == File.Exists(arg) && arg != "-")
                 {
                     throw new MyArgumentException(
                         $"But files-file '{arg}' is NOT found!");

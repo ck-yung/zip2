@@ -98,12 +98,6 @@ public class Create : ICommandMaker
             return false;
         }
 
-        if (args.Length== 0)
-        {
-            Console.WriteLine("No files are require to be compressed.");
-            return false;
-        }
-
         var ins = My.OpenZip.Invoke(false);
         if (ins == Stream.Null)
         {
