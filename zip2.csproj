@@ -11,6 +11,12 @@
     <None Remove=".gitignore" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="ICSharpCode.SharpZipLib">
+      <HintPath>..\Dlls\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
   <PropertyGroup>
     <Title>zip2</Title>
     <PackageId>zip2</PackageId>

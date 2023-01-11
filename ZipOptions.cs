@@ -2,6 +2,7 @@ namespace zip2;
 
 static internal partial class My
 {
+    static internal string ZipFilename { get; private set; } = "";
     static internal IInvokeOption<bool, Stream> OpenZip
         = new SingleValueOption<bool, Stream>(
             "--file", shortcut: "-f",
@@ -12,6 +13,7 @@ static internal partial class My
                 if (string.IsNullOrEmpty(arg)) return null;
                 return (readonlyFlag) =>
                 {
+                    ZipFilename = arg;
                     if (readonlyFlag)
                     {
                         if (false == File.Exists(arg))
