@@ -109,6 +109,8 @@ public class Create : ICommandMaker
         }
 
         int cntAdded = 0;
+        var buffer1 = new byte[32 * 1024];
+        var buffer2 = new byte[32 * 1024];
         var outZs = new ZipOutputStream(ins);
         My.CompressLevel.Invoke(outZs);
         foreach (var path in args.Concat(My.FilesFrom.Invoke(true))
@@ -131,11 +133,27 @@ public class Create : ICommandMaker
             {
                 try
                 {
+                    bool isBuffer1Read = true;
+                    var taskRead = fs.ReadAsync(buffer1, 0, buffer1.Length);
+                    var taskWrite = Stream.Null.WriteAsync(buffer2, 0, 0);
                     while (true)
                     {
-                        readSize = fs.Read(buffer, 0, buffer.Length);
+                        taskWrite.Wait();
+                        taskRead.Wait();
+                        readSize = taskRead.Result;
                         if (1 > readSize) break;
-                        outZs.Write(buffer, 0, readSize);
+                        if (isBuffer1Read)
+                        {
+                            isBuffer1Read = false;
+                            taskRead = fs.ReadAsync(buffer2, 0, buffer2.Length);
+                            taskWrite = outZs.WriteAsync(buffer1, 0, readSize);
+                        }
+                        else
+                        {
+                            isBuffer1Read = true;
+                            taskRead = fs.ReadAsync(buffer1, 0, buffer1.Length);
+                            taskWrite = outZs.WriteAsync(buffer2, 0, readSize);
+                        }
                         writtenSize += readSize;
                     }
                     cntAdded += 1;

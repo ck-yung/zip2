@@ -69,6 +69,9 @@ public class Extract : ICommandMaker
                 wildNames(Path.GetFileName(it.Name)),
             };
 
+        var buffer1 = new byte[32 * 1024];
+        var buffer2 = new byte[32 * 1024];
+
         var inpZs = new ZipInputStream(ins);
         var count = List.GetEntries(inpZs)
             .Where((it) => it.IsFile)
@@ -91,24 +94,31 @@ public class Extract : ICommandMaker
                     return false;
                 }
                 Console.WriteLine(targetFilename);
+                if (1 > it.Size) return true;
 
-                long wantSize = it.Size;
                 int readSize = 0;
-                var buffer = new byte[32 * 1024];
-                while (wantSize > 0)
+                bool isBuffer1Read = true;
+                var taskRead = inpZs.ReadAsync(buffer1, 0, buffer1.Length);
+                var taskWrite = Stream.Null.WriteAsync(buffer2, 0, 0);
+                while (true)
                 {
-                    if (wantSize > buffer.Length)
+                    taskWrite.Wait();
+                    taskRead.Wait();
+                    readSize = taskRead.Result;
+                    if (1 > readSize) break;
+
+                    if (isBuffer1Read)
                     {
-                        readSize = buffer.Length;
+                        isBuffer1Read = false;
+                        taskRead = inpZs.ReadAsync(buffer2, 0, buffer2.Length);
+                        taskWrite = outs.WriteAsync(buffer1, 0, readSize);
                     }
                     else
                     {
-                        readSize = (int)wantSize;
+                        isBuffer1Read = true;
+                        taskRead = inpZs.ReadAsync(buffer1, 0, buffer1.Length);
+                        taskWrite = outs.WriteAsync(buffer2, 0, readSize);
                     }
-                    readSize = inpZs.Read(buffer, 0, readSize);
-                    if (1 > readSize) break;
-                    outs.Write(buffer, 0, readSize);
-                    wantSize -= readSize;
                 }
                 outs.Close();
 
