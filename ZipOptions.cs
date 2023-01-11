@@ -3,6 +3,7 @@ namespace zip2;
 static internal partial class My
 {
     static internal string ZipFilename { get; private set; } = "";
+
     static internal IInvokeOption<bool, Stream> OpenZip
         = new SingleValueOption<bool, Stream>(
             "--file", shortcut: "-f",
@@ -27,4 +28,25 @@ static internal partial class My
                     return File.Create(arg);
                 };
             });
+
+    static internal IInvokeOption<string, string> ToOutDir
+        = new SingleValueOption<string, string>(
+            "--out-dir", shortcut: "-O",
+            init: (it) => it,
+            resolve: (the, arg) =>
+            {
+                if (string.IsNullOrEmpty(arg)) return null;
+                return (path) => Path.Combine(arg, path);
+            });
+
+    static internal IInvokeOption<string, Stream> Overwrite
+        = new NoValueOption<string, Stream>(
+            "--overwrite", shortcut: "-o",
+            init: (path) =>
+            {
+                if (File.Exists(path))
+                    return Stream.Null;
+                return File.Create(path);
+            },
+            alt: (path) => File.Create(path));
 }

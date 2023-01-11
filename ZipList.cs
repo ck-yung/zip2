@@ -28,9 +28,8 @@ public class List : ICommandMaker
         { }
     }
 
-    static internal IEnumerable<ZipEntry> GetEntries(Stream input)
+    static internal IEnumerable<ZipEntry> GetEntries(ZipInputStream inpZs)
     {
-        var inpZs = new ZipInputStream(input);
         ZipEntry? entryThe;
         while (null != (entryThe = inpZs.GetNextEntry()))
         {
@@ -70,7 +69,8 @@ public class List : ICommandMaker
             return false;
         }
 
-        var sumThe = GetEntries(ins)
+        var inpZs = new ZipInputStream(ins);
+        var sumThe = GetEntries(inpZs)
             .Select((it) =>
             {
                 Console.Write(it.IsCrypted ? '*' : ' ');

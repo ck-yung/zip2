@@ -129,4 +129,53 @@ static internal partial class My
             return InvokeImp(arg);
         }
     }
+
+    class NoValueOption<T, R> : IOption, IInvokeOption<T, R>
+    {
+        public string Name { get; init; }
+        public string Shortcut { get; init; }
+        public string Help { get; init; }
+        public NoValueOption(string name,
+            Func<T, R> init, Func<T, R> alt,
+            string shortcut = "", string help = "")
+        {
+            Name = name;
+            Shortcut = shortcut;
+            Help = help;
+            InvokeImp = init;
+            Resolve = (the, args) =>
+            {
+                if (args.Any())
+                {
+                    InvokeImp = alt;
+                }
+            };
+        }
+
+        public Action<IOption, IEnumerable<string>> Resolve { get; init; }
+
+        public IEnumerable<(bool, string)> Parse(
+            IEnumerable<(bool, string)> args)
+        {
+            var it = args.GetEnumerator();
+            while (it.MoveNext())
+            {
+                var current = it.Current;
+                if (current.Item2 == Name)
+                {
+                    yield return (true, Name);
+                }
+                else
+                {
+                    yield return current;
+                }
+            }
+        }
+
+        Func<T, R> InvokeImp { get; set; }
+        public R Invoke(T arg)
+        {
+            return InvokeImp(arg);
+        }
+    }
 }

@@ -8,6 +8,11 @@ static class Helper
     static internal readonly string ExeVersion;
     static internal readonly string ExeCopyright;
 
+    static internal Func<string, string>
+        ToLocalFilename { get; private set; }
+    static internal string ToStandFilename(
+        string filename) => filename.Replace('\\', '/');
+
     static Helper()
     {
         var asm = Assembly.GetExecutingAssembly();
@@ -23,6 +28,15 @@ static class Helper
         else
         {
             ExeCopyright = "?";
+        }
+
+        if (Path.DirectorySeparatorChar== '/')
+        {
+            ToLocalFilename = (path) => path.Replace('\\', '/');
+        }
+        else
+        {
+            ToLocalFilename = (path) => path.Replace('/', '\\');
         }
     }
 
