@@ -196,7 +196,7 @@ static internal partial class My
                 return it;
             })
             .Aggregate(
-                seed: new SumZipEntry(ZipFilename, isFile: true),
+                seed: new SumZipEntry(ZipFilename ?? ".", isFile: true),
                 func: (acc, it) => acc.AddWith(it)),
             resolve: (the, arg) =>
             {
@@ -215,7 +215,7 @@ static internal partial class My
                             return grp.Value;
                         })
                         .Aggregate(
-                            seed: new SumZipEntry(ZipFilename, isFile: true),
+                            seed: new SumZipEntry(ZipFilename ?? ".", isFile: true),
                             func: (acc, it) => acc.AddWith(it));
                     case "ext":
                         return (seq) => seq
@@ -230,7 +230,7 @@ static internal partial class My
                             return grp.Value;
                         })
                         .Aggregate(
-                            seed: new SumZipEntry(ZipFilename, isFile: true),
+                            seed: new SumZipEntry(ZipFilename ?? ".", isFile: true),
                             func: (acc, it) => acc.AddWith(it));
                     default:
                         throw new MyArgumentException(

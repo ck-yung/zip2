@@ -32,7 +32,7 @@ public class Syntax : ICommandMaker
               zip2 -xf ..\backup.zip -O restoreToDir
 
             Store files, which timestamp is within 2 days, into a new zip file.
-              dir2 src\ -bsp --within 2day | zip2 -cf ..\new.zip -3T -
+              dir2 src\ -bsk --within 2day | zip2 -cf ..\new.zip -3T -
             """);
             Console.Write(tmp.ToString());
             return true;

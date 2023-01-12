@@ -1,5 +1,5 @@
 # zip2
-**v2.0.0**
+**v2.0.1**
 
 ## Example:
 ```
@@ -14,8 +14,9 @@ zip2 -xf ZIP-FILENAME [OPTION ..] [FILE ..]
 ```
 
 ## Specified Example:
+Backup files in dir ```srcDir```, which timestamp is within 2 days, into a new zip file.
 ```
-dir2 srcDir -bsp --within 2hour | zip2 -cf ..\new.zip -T -
+dir2 srcDir -bsk --within 2hour | zip2 -cf ..\new.zip -T -
 ```
 
 ## Major Change:
