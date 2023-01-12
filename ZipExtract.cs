@@ -16,6 +16,7 @@ public class Extract : ICommandMaker
     static ImmutableArray<IOption> MyOptions = new IOption[]
     {
         (IOption) My.OpenZip,
+        (IOption) My.Verbose,
         (IOption) My.ToOutDir,
         (IOption) My.Overwrite,
         (IOption) My.ExclFiles,
@@ -32,7 +33,7 @@ public class Extract : ICommandMaker
 
     static bool Invoke(string[] args)
     {
-        if (args.Contains("--help"))
+        if (args.Contains(CommandMaker.HelpText))
         {
             Console.WriteLine(
                 """
@@ -131,7 +132,7 @@ public class Extract : ICommandMaker
             .Where(it => true == it)
             .Count();
         ins.Close();
-        Console.WriteLine($"#ok:{count}");
+        My.Verbose.Invoke($"#ok:{count}");
         return true;
     }
 }

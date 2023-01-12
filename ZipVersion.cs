@@ -2,7 +2,7 @@ using static zip2.Helper;
 
 namespace zip2;
 
-[Command(name: "--version", help: """
+[Command(name: "--version", shortcut: "-V", help: """
       zip2 --version
     """)]
 public class Version : ICommandMaker

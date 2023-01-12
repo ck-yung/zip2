@@ -4,6 +4,7 @@ namespace zip2;
 
 internal partial class CommandMaker
 {
+    public const string HelpText = "--help";
     public string Shortcut { get; init; }
     public string Name { get; init; }
     public Func<MyCommand> Create { get; init; }
@@ -75,11 +76,11 @@ internal partial class CommandMaker
             if (aa.ContainsKey(true))
             {
                 var bb = aa[true].Distinct().Take(3).ToArray();
-                if ((bb.Length == 2))
+                if (bb.Length == 2)
                 {
                     int cmdFound = -1;
-                    if (bb[0] == "--help") cmdFound = 1;
-                    else if (bb[1] == "--help") cmdFound = 0;
+                    if (bb[0] == HelpText) cmdFound = 1;
+                    else if (bb[1] == HelpText) cmdFound = 0;
                     if (cmdFound > -1)
                     {
                         if (Activator.CreateInstance(NamedCommands[bb[cmdFound]])
@@ -87,7 +88,7 @@ internal partial class CommandMaker
                         {
                             myCommand = b3.Make();
                         }
-                        return new string[] { "--help" };
+                        return new string[] { HelpText };
                     }
                 }
 

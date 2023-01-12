@@ -62,6 +62,7 @@ public class Create : ICommandMaker
     static ImmutableArray<IOption> MyOptions = new IOption[]
     {
         (IOption) My.OpenZip,
+        (IOption) My.Verbose,
         (IOption) My.CompressLevel,
         (IOption) My.FilesFrom,
     }.ToImmutableArray();
@@ -86,7 +87,7 @@ public class Create : ICommandMaker
 
     static bool Invoke(string[] args)
     {
-        if (args.Contains("--help"))
+        if (args.Contains(CommandMaker.HelpText))
         {
             Console.WriteLine(
                 """
@@ -175,10 +176,10 @@ public class Create : ICommandMaker
         outZs.Finish();
         outZs.Close();
         ins.Close();
-        Console.WriteLine($"#ok:{cntAdded}");
+        My.Verbose.Invoke($"#ok:{cntAdded}");
         if (1>cntAdded && File.Exists(My.ZipFilename))
         {
-            Console.WriteLine($"Clean {My.ZipFilename}");
+            My.Verbose.Invoke($"Clean {My.ZipFilename}");
             File.Delete(My.ZipFilename);
         }
         return true;

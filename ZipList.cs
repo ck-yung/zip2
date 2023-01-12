@@ -18,6 +18,7 @@ public class List : ICommandMaker
     static ImmutableArray<IOption> MyOptions = new IOption[]
     {
         (IOption) My.OpenZip,
+        (IOption) My.Verbose,
         (IOption) My.ExclFiles,
         (IOption) My.SumZip,
         (IOption) My.FilesFrom,
@@ -40,6 +41,17 @@ public class List : ICommandMaker
         }
     }
 
+    static internal string ReducePentCent(long size, long compressedSize)
+    {
+        if (1 > size) return " 0";
+        if (compressedSize > size) return " 0";
+        compressedSize = size - compressedSize;
+        var ratio = 1000 * compressedSize / size;
+        ratio += 5; ratio /= 10;
+        if (98 < ratio) return "99";
+        return $"{ratio,2}";
+    }
+
     static internal string KiloSize(long size)
     {
         var units = new char[] { 'P', 'T', 'G', 'M', 'k', ' ' };
@@ -54,7 +66,7 @@ public class List : ICommandMaker
 
     static bool Invoke(string[] args)
     {
-        if (args.Contains("--help"))
+        if (args.Contains(CommandMaker.HelpText))
         {
             Console.WriteLine(
                 """
@@ -98,7 +110,7 @@ public class List : ICommandMaker
                 Path.GetFileName(it.Name)))
             .Invoke(My.SumZip.Invoke);
         ins.Close();
-        Console.WriteLine(sumThe.ToString());
+        My.Verbose.Invoke(sumThe.ToString());
         return true;
     }
 }
@@ -110,9 +122,22 @@ internal class SumZipEntry
     {
         Name = name;
     }
+
+    public SumZipEntry(string name, bool isFile)
+    {
+        Name = name;
+        if (isFile && File.Exists(name))
+        {
+            FileSize = new FileInfo(name).Length;
+            Name = Path.GetFileName(name) ?? ".";
+        }
+    }
+
     public bool IsCrypted { get; private set; } = false;
     public int Count { get; private set; } = 0;
     public long Size { get; private set; } = 0;
+    public long FileSize { get; private set; } = 0;
+    public long CompressedSize { get; private set; } = 0;
     public DateTime DateTime { get; private set; } = DateTime.MaxValue;
     public DateTime Last { get; private set; } = DateTime.MinValue;
 
@@ -120,6 +145,8 @@ internal class SumZipEntry
     {
         var rtn = new StringBuilder();
         rtn.Append(IsCrypted ? '*' : ' ');
+        var sizeThe = (FileSize > 0) ? FileSize : CompressedSize;
+        rtn.Append($"{List.ReducePentCent(Size, sizeThe)} ");
         rtn.Append($"{List.KiloSize(Size)} ");
         rtn.Append($"{DateTime:yyyy-MM-dd HH:mm} ");
         rtn.Append($"- ");
@@ -133,6 +160,7 @@ internal class SumZipEntry
     {
         Count += 1;
         Size += entryThe.Size;
+        CompressedSize += entryThe.CompressedSize;
         if (DateTime > entryThe.DateTime) DateTime = entryThe.DateTime;
         if (Last < entryThe.DateTime) Last = entryThe.DateTime;
         if (entryThe.IsCrypted) IsCrypted = true;
@@ -143,6 +171,7 @@ internal class SumZipEntry
     {
         Count += other.Count;
         Size += other.Size;
+        CompressedSize += other.CompressedSize;
         if (DateTime > other.DateTime) DateTime = other.DateTime;
         if (Last < other.DateTime) Last = other.DateTime;
         if (other.IsCrypted) IsCrypted = true;
@@ -159,13 +188,15 @@ static internal partial class My
             .Select((it) =>
             {
                 Console.Write(it.IsCrypted ? '*' : ' ');
+                Console.Write(
+                    $"{List.ReducePentCent(it.Size, it.CompressedSize)} ");
                 Console.Write($"{List.KiloSize(it.Size)} ");
                 Console.Write($"{it.DateTime:yyyy-MM-dd HH:mm} ");
                 Console.WriteLine(it.Name);
                 return it;
             })
             .Aggregate(
-                seed: new SumZipEntry(Path.GetFileName(My.ZipFilename) ?? "."),
+                seed: new SumZipEntry(ZipFilename, isFile: true),
                 func: (acc, it) => acc.AddWith(it)),
             resolve: (the, arg) =>
             {
@@ -184,7 +215,7 @@ static internal partial class My
                             return grp.Value;
                         })
                         .Aggregate(
-                            seed: new SumZipEntry(Path.GetFileName(My.ZipFilename) ?? "."),
+                            seed: new SumZipEntry(ZipFilename, isFile: true),
                             func: (acc, it) => acc.AddWith(it));
                     case "ext":
                         return (seq) => seq
@@ -199,7 +230,7 @@ static internal partial class My
                             return grp.Value;
                         })
                         .Aggregate(
-                            seed: new SumZipEntry(Path.GetFileName(My.ZipFilename) ?? "."),
+                            seed: new SumZipEntry(ZipFilename, isFile: true),
                             func: (acc, it) => acc.AddWith(it));
                     default:
                         throw new MyArgumentException(

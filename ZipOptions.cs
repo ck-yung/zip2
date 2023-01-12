@@ -103,4 +103,14 @@ static internal partial class My
 
                 return (_) => ReadNamesFrom(arg);
             });
+
+    static internal IInvokeOption<string, bool> Verbose
+        = new NoValueOption<string, bool>(
+            "--verbose", shortcut: "-v",
+            init: (msg) => false,
+            alt: (msg) =>
+            {
+                Console.Error.WriteLine(msg);
+                return true;
+            });
 }
