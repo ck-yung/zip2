@@ -114,9 +114,15 @@ public class Create : ICommandMaker
         var buffer2 = new byte[32 * 1024];
         var outZs = new ZipOutputStream(ins);
         My.CompressLevel.Invoke(outZs);
+        var zipFullPath = Path.GetFullPath(My.ZipFilename);
         foreach (var path in args.Concat(My.FilesFrom.Invoke(true))
             .Select((it) => Helper.ToLocalFilename(it))
             .Where((it) => File.Exists(it))
+            .Where((it) =>
+            {
+                var theFullpath = Path.GetFullPath(it);
+                return (zipFullPath != theFullpath);
+            })
             .Distinct())
         {
             var sizeThe = (new FileInfo(path)).Length;
