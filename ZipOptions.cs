@@ -30,14 +30,24 @@ static internal partial class My
                 };
             });
 
-    static internal IInvokeOption<string, string> ToOutDir
-        = new SingleValueOption<string, string>(
+    static internal IInvokeOption<bool, Func<string, string>> ToOutDir
+        = new SingleValueOption<bool, Func<string, string>>(
             "--out-dir", help: "OUTPUT-DIR", shortcut: "-O",
-            init: (it) => it,
+            init: (_) => (it) => it,
             resolve: (the, arg) =>
             {
                 if (string.IsNullOrEmpty(arg)) return null;
-                return (path) => Path.Combine(arg, path);
+                return (_) =>
+                {
+                    if (arg == "-")
+                    {
+                        arg = Path.GetFileNameWithoutExtension(ZipFilename);
+                        if (string.IsNullOrEmpty(arg))
+                            throw new MyArgumentException("But --file is NOT set!");
+                        return (path) => Path.Combine(arg, path);
+                    }
+                    return (path) => Path.Combine(arg, path);
+                };
             });
 
     static internal IInvokeOption<string, Stream> Overwrite

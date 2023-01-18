@@ -74,6 +74,7 @@ public class Extract : ICommandMaker
         var buffer2 = new byte[32 * 1024];
 
         var inpZs = new ZipInputStream(ins);
+        var toOutDir = My.ToOutDir.Invoke(true);
         var count = List.GetEntries(inpZs)
             .Where((it) => it.IsFile)
             .Where((it) => checkZipEntryName(it))
@@ -81,7 +82,7 @@ public class Extract : ICommandMaker
                 Path.GetFileName(it.Name)))
             .Select((it) =>
             {
-                var targetFilename = My.ToOutDir.Invoke(
+                var targetFilename = toOutDir(
                     Helper.ToLocalFilename(it.Name));
                 var dirThe = Path.GetDirectoryName(targetFilename);
                 if (!string.IsNullOrEmpty(dirThe))
