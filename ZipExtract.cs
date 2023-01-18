@@ -3,6 +3,42 @@ using System.Collections.Immutable;
 
 namespace zip2;
 
+static internal partial class My
+{
+    static internal IInvokeOption<bool, Func<string, string>> ToOutDir
+        = new SingleValueOption<bool, Func<string, string>>(
+            "--out-dir", help: "OUTPUT-DIR", shortcut: "-O",
+            init: (_) => (it) => it,
+            resolve: (the, arg) =>
+            {
+                if (string.IsNullOrEmpty(arg)) return null;
+                return (_) =>
+                {
+                    if (arg == "-")
+                    {
+                        arg = Path.GetFileNameWithoutExtension(
+                            ZipFilename) ?? string.Empty;
+                        if (string.IsNullOrEmpty(arg))
+                            throw new MyArgumentException("But --file is NOT set!");
+                        return (path) => Path.Combine(arg, path);
+                    }
+                    return (path) => Path.Combine(arg, path);
+                };
+            });
+
+    static internal IInvokeOption<string, Stream> Overwrite
+        = new NoValueOption<string, Stream>(
+            "--overwrite", shortcut: "-o",
+            init: (path) =>
+            {
+                if (File.Exists(path))
+                    return Stream.Null;
+                return File.Create(path);
+            },
+            alt: (path) => File.Create(path));
+
+}
+
 [Command(name: "--extract", shortcut: "-x", help: """
       zip2 -xf ZIP-FILE [OPTION ..] [WILD ..]
     """)]
@@ -17,6 +53,7 @@ public class Extract : ICommandMaker
     {
         (IOption) My.OpenZip,
         (IOption) My.Verbose,
+        (IOption) My.TotalText,
         (IOption) My.ToOutDir,
         (IOption) My.Overwrite,
         (IOption) My.ExclFiles,
@@ -39,6 +76,8 @@ public class Extract : ICommandMaker
                 """
                 Extract zip file:
                   zip2 -xf ZIP-FILE [OPTION ..] [WILD ..]
+
+                Output dir will be 'ZIP-FILE' if '--out-dir -'
                 """);
             Helper.PrintHelp(MyOptions);
             return false;
@@ -92,11 +131,15 @@ public class Extract : ICommandMaker
                 var outs = My.Overwrite.Invoke(targetFilename);
                 if (outs == Stream.Null)
                 {
-                    Console.WriteLine($"Skip existing {targetFilename}");
+                    My.Verbose.Invoke($"Skip existing {targetFilename}");
                     return false;
                 }
-                Console.WriteLine(targetFilename);
-                if (1 > it.Size) return true;
+                My.Verbose.Invoke(targetFilename);
+                if (1 > it.Size)
+                {
+                    outs.Close();
+                    return true;
+                }
 
                 int readSize = 0;
                 bool isBuffer1Read = true;
@@ -133,7 +176,7 @@ public class Extract : ICommandMaker
             .Where(it => true == it)
             .Count();
         ins.Close();
-        My.Verbose.Invoke($"#ok:{count}");
+        My.TotalText.Invoke($"Extract OK:{count}");
         return true;
     }
 }

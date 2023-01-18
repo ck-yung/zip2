@@ -19,6 +19,7 @@ public class List : ICommandMaker
     {
         (IOption) My.OpenZip,
         (IOption) My.Verbose,
+        (IOption) My.TotalText,
         (IOption) My.ExclFiles,
         (IOption) My.SumZip,
         (IOption) My.FilesFrom,
@@ -99,7 +100,7 @@ public class List : ICommandMaker
         var ins = My.OpenZip.Invoke((true, "'zip2 -t?' for help"));
         if (ins == Stream.Null)
         {
-            Console.WriteLine("Open failed.");
+            Console.Error.WriteLine($"Open {My.ZipFilename} failed.");
             return false;
         }
 
@@ -110,7 +111,7 @@ public class List : ICommandMaker
                 Path.GetFileName(it.Name)))
             .Invoke(My.SumZip.Invoke);
         ins.Close();
-        My.Verbose.Invoke(sumThe.ToString());
+        My.TotalText.Invoke(sumThe.ToString());
         return true;
     }
 }
@@ -187,12 +188,14 @@ static internal partial class My
             init: (seq) => seq
             .Select((it) =>
             {
-                Console.Write(it.IsCrypted ? '*' : ' ');
-                Console.Write(
+                var textThe = new StringBuilder();
+                textThe.Append(it.IsCrypted ? '*' : ' ');
+                textThe.Append(
                     $"{List.ReducePentCent(it.Size, it.CompressedSize)} ");
-                Console.Write($"{List.KiloSize(it.Size)} ");
-                Console.Write($"{it.DateTime:yyyy-MM-dd HH:mm} ");
-                Console.WriteLine(it.Name);
+                textThe.Append($"{List.KiloSize(it.Size)} ");
+                textThe.Append($"{it.DateTime:yyyy-MM-dd HH:mm} ");
+                textThe.Append(it.Name);
+                Verbose.Invoke(textThe.ToString());
                 return it;
             })
             .Aggregate(
@@ -211,7 +214,7 @@ static internal partial class My
                             func: (acc, it) => acc.AddWith(it)))
                         .Select((grp) =>
                         {
-                            Console.WriteLine(grp.Value.ToString());
+                            Verbose.Invoke(grp.Value.ToString());
                             return grp.Value;
                         })
                         .Aggregate(
@@ -226,7 +229,7 @@ static internal partial class My
                             func: (acc, it) => acc.AddWith(it)))
                         .Select((grp) =>
                         {
-                            Console.WriteLine(grp.Value.ToString());
+                            Verbose.Invoke(grp.Value.ToString());
                             return grp.Value;
                         })
                         .Aggregate(

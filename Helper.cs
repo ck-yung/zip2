@@ -5,6 +5,12 @@ using System.Text.RegularExpressions;
 namespace zip2;
 static class Helper
 {
+    internal sealed class Non
+    {
+        public static readonly Non e = new Non();
+        private Non() { }
+    }
+
     static internal readonly string ExeName;
     static internal readonly string ExeVersion;
     static internal readonly string ExeCopyright;

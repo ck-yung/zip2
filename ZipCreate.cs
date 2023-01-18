@@ -63,6 +63,7 @@ public class Create : ICommandMaker
     {
         (IOption) My.OpenZip,
         (IOption) My.Verbose,
+        (IOption) My.TotalText,
         (IOption) My.CompressLevel,
         (IOption) My.FilesFrom,
     }.ToImmutableArray();
@@ -135,6 +136,7 @@ public class Create : ICommandMaker
             long writtenSize = 0L;
             int readSize = 0;
             outZs.PutNextEntry(entry); // TODO: isTranscational: true
+            My.Verbose.Invoke(path);
             byte[] buffer = new byte[32 * 1024];
             using (FileStream fs = File.OpenRead(path))
             {
@@ -176,16 +178,15 @@ public class Create : ICommandMaker
             }
 
             // TODO: if (sizeThe != writtenSize) outZs.Rollback();
-            Console.WriteLine(path);
             outZs.CloseEntry();
         }
         outZs.Finish();
         outZs.Close();
         ins.Close();
-        My.Verbose.Invoke($"#ok:{cntAdded}");
+        My.TotalText.Invoke($"Add OK:{cntAdded}");
         if (1>cntAdded && File.Exists(My.ZipFilename))
         {
-            My.Verbose.Invoke($"Clean {My.ZipFilename}");
+            My.TotalText.Invoke($"Clean {My.ZipFilename}");
             File.Delete(My.ZipFilename);
         }
         return true;

@@ -1,3 +1,5 @@
+using static zip2.Helper;
+
 namespace zip2;
 
 static internal partial class My
@@ -29,37 +31,6 @@ static internal partial class My
                     return File.Create(arg);
                 };
             });
-
-    static internal IInvokeOption<bool, Func<string, string>> ToOutDir
-        = new SingleValueOption<bool, Func<string, string>>(
-            "--out-dir", help: "OUTPUT-DIR", shortcut: "-O",
-            init: (_) => (it) => it,
-            resolve: (the, arg) =>
-            {
-                if (string.IsNullOrEmpty(arg)) return null;
-                return (_) =>
-                {
-                    if (arg == "-")
-                    {
-                        arg = Path.GetFileNameWithoutExtension(ZipFilename);
-                        if (string.IsNullOrEmpty(arg))
-                            throw new MyArgumentException("But --file is NOT set!");
-                        return (path) => Path.Combine(arg, path);
-                    }
-                    return (path) => Path.Combine(arg, path);
-                };
-            });
-
-    static internal IInvokeOption<string, Stream> Overwrite
-        = new NoValueOption<string, Stream>(
-            "--overwrite", shortcut: "-o",
-            init: (path) =>
-            {
-                if (File.Exists(path))
-                    return Stream.Null;
-                return File.Create(path);
-            },
-            alt: (path) => File.Create(path));
 
     static internal readonly IInvokeOption<string, bool> ExclFiles
         = new ManyValuesOption<string, bool>("--excl", help: "WILD[,WILD,..]",
@@ -114,13 +85,23 @@ static internal partial class My
                 return (_) => ReadNamesFrom(arg);
             });
 
-    static internal IInvokeOption<string, bool> Verbose
-        = new NoValueOption<string, bool>(
+    static internal IInvokeOption<string, Non> Verbose
+        = new NoValueOption<string, Non>(
             "--verbose", shortcut: "-v",
-            init: (msg) => false,
             alt: (msg) =>
             {
-                Console.Error.WriteLine(msg);
-                return true;
-            });
+                Console.WriteLine(msg);
+                return Non.e;
+            },
+            init: (msg) => Non.e);
+
+    static internal IInvokeOption<string, Non> TotalText
+        = new NoValueOption<string, Non>(
+            "--total-off",
+            init: (msg) =>
+            {
+                Console.WriteLine(msg);
+                return Non.e;
+            },
+            alt: (msg) => Non.e);
 }
