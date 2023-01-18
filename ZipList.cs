@@ -1,9 +1,16 @@
 using ICSharpCode.SharpZipLib.Zip;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Text;
-
+using static zip2.Helper;
 namespace zip2;
+
+static internal partial class My
+{
+    static internal IInvokeOption<Non, bool> OtherColumnOpt
+        = new NoValueOption<Non, bool>("--name-only",
+            init: (_) => true, alt: (_) => false);
+}
+
 
 [Command(name: "--list", shortcut: "-t", help: """
       zip2 -tf ZIP-FILE [OPTION ..] [WILD ..]
@@ -15,21 +22,29 @@ public class List : ICommandMaker
         return new CommandThe();
     }
 
-    static ImmutableArray<IOption> MyOptions = new IOption[]
+    static readonly ImmutableArray<IOption> MyOptions = new IOption[]
     {
         (IOption) My.OpenZip,
         (IOption) My.Verbose,
+        (IOption) My.OtherColumnOpt,
         (IOption) My.TotalText,
         (IOption) My.ExclFiles,
         (IOption) My.SumZip,
         (IOption) My.FilesFrom,
     }.ToImmutableArray();
 
+    static readonly ImmutableDictionary<string, string[]> MyShortcuts =
+        new Dictionary<string, string[]>
+        {
+            ["-b"] = new string[] {
+                "--verbose", "--name-only", "--total-off"},
+        }.ToImmutableDictionary();
     class CommandThe : MyCommand
     {
         public CommandThe() : base(
             invoke: (args) => List.Invoke(args),
-            options: MyOptions)
+            options: MyOptions,
+            shortcutArrays: MyShortcuts)
         { }
     }
 
@@ -74,7 +89,8 @@ public class List : ICommandMaker
                 List zip file:
                   zip2 -tf ZIP-FILE [OPTION ..] [WILD ..]
                 """);
-            Helper.PrintHelp(MyOptions);
+            Helper.PrintHelp(MyOptions,
+                shortcutArrays: MyShortcuts);
             return false;
         }
 
@@ -145,13 +161,16 @@ internal class SumZipEntry
     public override string ToString()
     {
         var rtn = new StringBuilder();
-        rtn.Append(IsCrypted ? '*' : ' ');
-        var sizeThe = (FileSize > 0) ? FileSize : CompressedSize;
-        rtn.Append($"{List.ReducePentCent(Size, sizeThe)} ");
-        rtn.Append($"{List.KiloSize(Size)} ");
-        rtn.Append($"{DateTime:yyyy-MM-dd HH:mm} ");
-        rtn.Append($"- ");
-        rtn.Append($"{Last:yyyy-MM-dd HH:mm} ");
+        if (My.OtherColumnOpt.Invoke(Non.e))
+        {
+            rtn.Append(IsCrypted ? '*' : ' ');
+            var sizeThe = (FileSize > 0) ? FileSize : CompressedSize;
+            rtn.Append($"{List.ReducePentCent(Size, sizeThe)} ");
+            rtn.Append($"{List.KiloSize(Size)} ");
+            rtn.Append($"{DateTime:yyyy-MM-dd HH:mm} ");
+            rtn.Append($"- ");
+            rtn.Append($"{Last:yyyy-MM-dd HH:mm} ");
+        }
         rtn.Append($"{Count,5:N0} ");
         rtn.Append(Name);
         return rtn.ToString();
@@ -188,14 +207,21 @@ static internal partial class My
             init: (seq) => seq
             .Select((it) =>
             {
-                var textThe = new StringBuilder();
-                textThe.Append(it.IsCrypted ? '*' : ' ');
-                textThe.Append(
-                    $"{List.ReducePentCent(it.Size, it.CompressedSize)} ");
-                textThe.Append($"{List.KiloSize(it.Size)} ");
-                textThe.Append($"{it.DateTime:yyyy-MM-dd HH:mm} ");
-                textThe.Append(it.Name);
-                Verbose.Invoke(textThe.ToString());
+                if (My.OtherColumnOpt.Invoke(Non.e))
+                {
+                    var textThe = new StringBuilder();
+                    textThe.Append(it.IsCrypted ? '*' : ' ');
+                    textThe.Append(
+                        $"{List.ReducePentCent(it.Size, it.CompressedSize)} ");
+                    textThe.Append($"{List.KiloSize(it.Size)} ");
+                    textThe.Append($"{it.DateTime:yyyy-MM-dd HH:mm} ");
+                    textThe.Append(it.Name);
+                    Verbose.Invoke(textThe.ToString());
+                }
+                else
+                {
+                    Verbose.Invoke(it.Name);
+                }
                 return it;
             })
             .Aggregate(
