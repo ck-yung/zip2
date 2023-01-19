@@ -9,6 +9,22 @@ static internal partial class My
     static internal IInvokeOption<Non, bool> OtherColumnOpt
         = new NoValueOption<Non, bool>("--name-only",
             init: (_) => true, alt: (_) => false);
+
+    static internal IInvokeOption<string, bool> IsFileFound
+        = new SingleValueOption<string, bool>(
+            "--check-find-on", shortcut: "-F", help: "DIR",
+            init: (_) => true,
+            resolve: (the, arg) =>
+            {
+                if (string.IsNullOrEmpty(arg)) return null;
+                if (!Directory.Exists(arg))
+                {
+                    throw new MyArgumentException(
+                        $"But {the.Name} dir '{arg}'is NOT found.");
+                }
+                return (path) => File.Exists(Path.Join(arg,
+                    ToLocalFilename(path)));
+            });
 }
 
 
@@ -29,6 +45,7 @@ public class List : ICommandMaker
         (IOption) My.OtherColumnOpt,
         (IOption) My.TotalText,
         (IOption) My.ExclFiles,
+        (IOption) My.IsFileFound,
         (IOption) My.SumZip,
         (IOption) My.FilesFrom,
     }.ToImmutableArray();
@@ -125,6 +142,7 @@ public class List : ICommandMaker
             .Where((it) => checkZipEntryName(it))
             .Where((it) => false == My.ExclFiles.Invoke(
                 Path.GetFileName(it.Name)))
+            .Where((it) => My.IsFileFound.Invoke(it.Name))
             .Invoke(My.SumZip.Invoke);
         ins.Close();
         My.TotalText.Invoke(sumThe.ToString());

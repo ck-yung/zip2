@@ -9,7 +9,7 @@ zip2 -xf ..\backup.zip -O restore-dir
 ## Syntax:
 ```
 zip2 -cf NEW-ZIP-FILENAME [OPTION ..] [FILE ..]
-zip2 -tf ZIP-FILENAME [OPTION ..] [FILE ..]
+zip2 -tvf ZIP-FILENAME [OPTION ..] [FILE ..]
 zip2 -xf ZIP-FILENAME [OPTION ..] [FILE ..]
 ```
 
