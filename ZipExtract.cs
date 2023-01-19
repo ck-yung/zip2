@@ -1,5 +1,6 @@
 using ICSharpCode.SharpZipLib.Zip;
 using System.Collections.Immutable;
+using static zip2.Helper;
 
 namespace zip2;
 
@@ -26,7 +27,7 @@ static internal partial class My
                 };
             });
 
-    static internal IInvokeOption<string, Stream> Overwrite
+    static internal IInvokeOption<string, Stream> CreateExtractFile
         = new NoValueOption<string, Stream>(
             "--overwrite", shortcut: "-o",
             init: (path) =>
@@ -37,6 +38,10 @@ static internal partial class My
             },
             alt: (path) => File.Create(path));
 
+    static internal IInvokeOption<string, string> PathNameOpt
+        = new NoValueOption<string, string>(
+            "--no-dir", init: (path) => path,
+            alt: (path) => Path.GetFileName(path));
 }
 
 [Command(name: "--extract", shortcut: "-x", help: """
@@ -54,8 +59,9 @@ public class Extract : ICommandMaker
         (IOption) My.OpenZip,
         (IOption) My.Verbose,
         (IOption) My.TotalText,
+        (IOption) My.PathNameOpt,
         (IOption) My.ToOutDir,
-        (IOption) My.Overwrite,
+        (IOption) My.CreateExtractFile,
         (IOption) My.ExclFiles,
         (IOption) My.FilesFrom,
     }.ToImmutableArray();
@@ -122,13 +128,14 @@ public class Extract : ICommandMaker
             .Select((it) =>
             {
                 var targetFilename = toOutDir(
-                    Helper.ToLocalFilename(it.Name));
+                    Helper.ToLocalFilename(
+                        My.PathNameOpt.Invoke(it.Name)));
                 var dirThe = Path.GetDirectoryName(targetFilename);
                 if (!string.IsNullOrEmpty(dirThe))
                 {
                     Directory.CreateDirectory(dirThe);
                 }
-                var outs = My.Overwrite.Invoke(targetFilename);
+                var outs = My.CreateExtractFile.Invoke(targetFilename);
                 if (outs == Stream.Null)
                 {
                     My.Verbose.Invoke($"Skip existing {targetFilename}");
