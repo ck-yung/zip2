@@ -1,7 +1,6 @@
 using ICSharpCode.SharpZipLib.Zip;
 using System.Collections.Immutable;
 using System.Text;
-using System.Xml.XPath;
 using static zip2.Helper;
 namespace zip2;
 
@@ -64,8 +63,80 @@ static internal partial class My
                         $"'{arg}' is bad to {the.Name}");
                 }
             });
-}
 
+    static internal IInvokeOption<IEnumerable<ZipEntry>, SumZipEntry> SumZip
+        = new SingleValueOption<IEnumerable<ZipEntry>, SumZipEntry>(
+            "--sum", help: "ext | dir",
+            init: (seq) => seq
+            .Invoke(My.SortBy.Invoke)
+            .Select((it) =>
+            {
+                if (My.OtherColumnOpt.Invoke(Non.e))
+                {
+                    var textThe = new StringBuilder();
+                    textThe.Append(it.IsCrypted ? '*' : ' ');
+                    textThe.Append(
+                        $"{List.ReducePentCent(it.Size, it.CompressedSize)} ");
+                    textThe.Append($"{List.KiloSize(it.Size)} ");
+                    textThe.Append($"{it.DateTime:yyyy-MM-dd HH:mm} ");
+                    textThe.Append(it.Name);
+                    Verbose.Invoke(textThe.ToString());
+                }
+                else
+                {
+                    Verbose.Invoke(it.Name);
+                }
+                return it;
+            })
+            .Aggregate(
+                seed: new SumZipEntry(ZipFilename ?? ".", isFile: true),
+                func: (acc, it) => acc.AddWith(it)),
+            resolve: (the, arg) =>
+            {
+                switch (arg)
+                {
+                    case "dir":
+                        return (seq) => seq
+                        .GroupBy((it) => Helper.GetFirstDirPart(it.Name))
+                        .ToImmutableDictionary((grp) => grp.Key,
+                        (grp) => grp.Aggregate(
+                            seed: new SumZipEntry(grp.Key),
+                            func: (acc, it) => acc.AddWith(it)))
+                        .Select((pair) => pair.Value)
+                        .Invoke(SortSumEntry)
+                        .Select((it) =>
+                        {
+                            Verbose.Invoke(it.ToString());
+                            return it;
+                        })
+                        .Aggregate(
+                            seed: new SumZipEntry(ZipFilename ?? ".", isFile: true),
+                            func: (acc, it) => acc.AddWith(it));
+                    case "ext":
+                        return (seq) => seq
+                        .Select((it) => (Path.GetExtension(it.Name), it))
+                        .GroupBy((pair) => string.IsNullOrEmpty(pair.Item1)
+                        ? "*no-ext*" : pair.Item1)
+                        .ToImmutableDictionary((grp) => grp.Key,
+                        (grp) => grp.Aggregate(
+                            seed: new SumZipEntry(grp.Key),
+                            func: (acc, it) => acc.AddWith(it.Item2)))
+                        .Select((pair) => pair.Value)
+                        .Invoke(SortSumEntry)
+                        .Select((it) =>
+                        {
+                            Verbose.Invoke(it.ToString());
+                            return it;
+                        })
+                        .Aggregate(
+                            seed: new SumZipEntry(ZipFilename ?? ".", isFile: true),
+                            func: (acc, it) => acc.AddWith(it));
+                    default:
+                        throw new MyArgumentException(
+                            $"'{arg}' is bad to {the.Name}");
+                }
+            });
+}
 
 [Command(name: "--list", shortcut: "-t", help: """
       zip2 -tf ZIP-FILE [OPTION ..] [WILD ..]
@@ -255,80 +326,4 @@ internal class SumZipEntry
         if (other.IsCrypted) IsCrypted = true;
         return this;
     }
-}
-
-static internal partial class My
-{
-    static internal IInvokeOption<IEnumerable<ZipEntry>, SumZipEntry> SumZip
-        = new SingleValueOption<IEnumerable<ZipEntry>, SumZipEntry>(
-            "--sum", help: "ext | dir",
-            init: (seq) => seq
-            .Invoke(My.SortBy.Invoke)
-            .Select((it) =>
-            {
-                if (My.OtherColumnOpt.Invoke(Non.e))
-                {
-                    var textThe = new StringBuilder();
-                    textThe.Append(it.IsCrypted ? '*' : ' ');
-                    textThe.Append(
-                        $"{List.ReducePentCent(it.Size, it.CompressedSize)} ");
-                    textThe.Append($"{List.KiloSize(it.Size)} ");
-                    textThe.Append($"{it.DateTime:yyyy-MM-dd HH:mm} ");
-                    textThe.Append(it.Name);
-                    Verbose.Invoke(textThe.ToString());
-                }
-                else
-                {
-                    Verbose.Invoke(it.Name);
-                }
-                return it;
-            })
-            .Aggregate(
-                seed: new SumZipEntry(ZipFilename ?? ".", isFile: true),
-                func: (acc, it) => acc.AddWith(it)),
-            resolve: (the, arg) =>
-            {
-                switch (arg)
-                {
-                    case "dir":
-                        return (seq) => seq
-                        .GroupBy((it) => Helper.GetFirstDirPart(it.Name))
-                        .ToImmutableDictionary((grp) => grp.Key,
-                        (grp) => grp.Aggregate(
-                            seed: new SumZipEntry(grp.Key),
-                            func: (acc, it) => acc.AddWith(it)))
-                        .Select((pair) => pair.Value)
-                        .Invoke(SortSumEntry)
-                        .Select((it) =>
-                        {
-                            Verbose.Invoke(it.ToString());
-                            return it;
-                        })
-                        .Aggregate(
-                            seed: new SumZipEntry(ZipFilename ?? ".", isFile: true),
-                            func: (acc, it) => acc.AddWith(it));
-                    case "ext":
-                        return (seq) => seq
-                        .Select((it) => (Path.GetExtension(it.Name), it))
-                        .GroupBy((pair) => string.IsNullOrEmpty(pair.Item1)
-                        ? "*no-ext*" : pair.Item1)
-                        .ToImmutableDictionary((grp) => grp.Key,
-                        (grp) => grp.Aggregate(
-                            seed: new SumZipEntry(grp.Key),
-                            func: (acc, it) => acc.AddWith(it.Item2)))
-                        .Select((pair) => pair.Value)
-                        .Invoke(SortSumEntry)
-                        .Select((it) =>
-                        {
-                            Verbose.Invoke(it.ToString());
-                            return it;
-                        })
-                        .Aggregate(
-                            seed: new SumZipEntry(ZipFilename ?? ".", isFile: true),
-                            func: (acc, it) => acc.AddWith(it));
-                    default:
-                        throw new MyArgumentException(
-                            $"'{arg}' is bad to {the.Name}");
-                }
-            });
 }

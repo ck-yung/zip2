@@ -4,8 +4,8 @@ class Program
 {
     static public void Main(string[] args)
     {
-		try
-		{
+        try
+        {
             if (args.Length == 0)
             {
                 Console.WriteLine(
@@ -15,13 +15,12 @@ class Program
                     """);
                 return;
             }
-
             RunMain(args);
-		}
-		catch (MyArgumentException ae)
-		{
-			Console.WriteLine(ae.Message);
-		}
+        }
+        catch (MyArgumentException ae)
+        {
+            Console.WriteLine(ae.Message);
+        }
         catch (Exception ee)
         {
             Console.WriteLine(ee);
