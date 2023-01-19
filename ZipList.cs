@@ -1,6 +1,7 @@
 using ICSharpCode.SharpZipLib.Zip;
 using System.Collections.Immutable;
 using System.Text;
+using System.Xml.XPath;
 using static zip2.Helper;
 namespace zip2;
 
@@ -12,7 +13,7 @@ static internal partial class My
 
     static internal IInvokeOption<string, bool> IsFileFound
         = new SingleValueOption<string, bool>(
-            "--check-find-on", shortcut: "-F", help: "DIR",
+            "--if-find-on", shortcut: "-F", help: "DIR",
             init: (_) => true,
             resolve: (the, arg) =>
             {
@@ -20,10 +21,48 @@ static internal partial class My
                 if (!Directory.Exists(arg))
                 {
                     throw new MyArgumentException(
-                        $"But {the.Name} dir '{arg}'is NOT found.");
+                        $"But {the.Name} dir '{arg}' is NOT found.");
                 }
                 return (path) => File.Exists(Path.Join(arg,
                     ToLocalFilename(path)));
+            });
+
+    static internal Func<IEnumerable<SumZipEntry>, IEnumerable<SumZipEntry>> SortSumEntry
+    { get; private set; } = (seq) => seq;
+
+    static internal IInvokeOption<IEnumerable<ZipEntry>, IEnumerable<ZipEntry>> SortBy
+        = new SingleValueOption<IEnumerable<ZipEntry>, IEnumerable<ZipEntry>>(
+            "--sort", help: "name | date | size | ratio | last | count",
+            shortcut: "-o", init: (it) => it,
+            resolve: (the, arg) =>
+            {
+                if (string.IsNullOrEmpty(arg)) return null;
+                switch (arg)
+                {
+                    case "name":
+                        SortSumEntry = (seq) => seq.OrderBy((it) => it.Name);
+                        return (seq) => seq.OrderBy((it) => it.Name);
+                    case "date":
+                        SortSumEntry = (seq) => seq.OrderBy((it) => it.DateTime);
+                        return (seq) => seq.OrderBy((it) => it.DateTime);
+                    case "size":
+                        SortSumEntry = (seq) => seq.OrderBy((it) => it.Size);
+                        return (seq) => seq.OrderBy((it) => it.Size);
+                    case "ratio":
+                        SortSumEntry = (seq) => seq.OrderBy((it) =>
+                        List.ReducePentCent(it.Size, it.CompressedSize));
+                        return (seq) => seq.OrderBy((it) =>
+                        List.ReducePentCent(it.Size, it.CompressedSize));
+                    case "last":
+                        SortSumEntry = (seq) => seq.OrderBy((it) => it.Last);
+                        return null;
+                    case "count":
+                        SortSumEntry = (seq) => seq.OrderBy((it) => it.Count);
+                        return null;
+                    default:
+                        throw new MyArgumentException(
+                        $"'{arg}' is bad to {the.Name}");
+                }
             });
 }
 
@@ -46,6 +85,7 @@ public class List : ICommandMaker
         (IOption) My.TotalText,
         (IOption) My.ExclFiles,
         (IOption) My.IsFileFound,
+        (IOption) My.SortBy,
         (IOption) My.SumZip,
         (IOption) My.FilesFrom,
     }.ToImmutableArray();
@@ -223,6 +263,7 @@ static internal partial class My
         = new SingleValueOption<IEnumerable<ZipEntry>, SumZipEntry>(
             "--sum", help: "ext | dir",
             init: (seq) => seq
+            .Invoke(My.SortBy.Invoke)
             .Select((it) =>
             {
                 if (My.OtherColumnOpt.Invoke(Non.e))
@@ -256,25 +297,31 @@ static internal partial class My
                         (grp) => grp.Aggregate(
                             seed: new SumZipEntry(grp.Key),
                             func: (acc, it) => acc.AddWith(it)))
-                        .Select((grp) =>
+                        .Select((pair) => pair.Value)
+                        .Invoke(SortSumEntry)
+                        .Select((it) =>
                         {
-                            Verbose.Invoke(grp.Value.ToString());
-                            return grp.Value;
+                            Verbose.Invoke(it.ToString());
+                            return it;
                         })
                         .Aggregate(
                             seed: new SumZipEntry(ZipFilename ?? ".", isFile: true),
                             func: (acc, it) => acc.AddWith(it));
                     case "ext":
                         return (seq) => seq
-                        .GroupBy((it) => Path.GetExtension(it.Name) ?? "*no-ext*")
+                        .Select((it) => (Path.GetExtension(it.Name), it))
+                        .GroupBy((pair) => string.IsNullOrEmpty(pair.Item1)
+                        ? "*no-ext*" : pair.Item1)
                         .ToImmutableDictionary((grp) => grp.Key,
                         (grp) => grp.Aggregate(
                             seed: new SumZipEntry(grp.Key),
-                            func: (acc, it) => acc.AddWith(it)))
-                        .Select((grp) =>
+                            func: (acc, it) => acc.AddWith(it.Item2)))
+                        .Select((pair) => pair.Value)
+                        .Invoke(SortSumEntry)
+                        .Select((it) =>
                         {
-                            Verbose.Invoke(grp.Value.ToString());
-                            return grp.Value;
+                            Verbose.Invoke(it.ToString());
+                            return it;
                         })
                         .Aggregate(
                             seed: new SumZipEntry(ZipFilename ?? ".", isFile: true),

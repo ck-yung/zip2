@@ -86,15 +86,7 @@ static class Helper
         Console.WriteLine("OPTION:");
         foreach (var opt in opts)
         {
-            if (string.IsNullOrEmpty(opt.Shortcut))
-            {
-                //nsole.WriteLine($"  {opt.Name,12}  --  {opt.Help}");
-                Console.WriteLine($"  {opt.Name,12}      {opt.Help}");
-            }
-            else
-            {
-                Console.WriteLine($"  {opt.Name,12}  {opt.Shortcut}  {opt.Help}");
-            }
+            Console.WriteLine($"  {opt.Name,12}  {opt.Shortcut,2}  {opt.Help}");
         }
 
         if (shortcutArrays.Any())
