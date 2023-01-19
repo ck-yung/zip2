@@ -136,6 +136,43 @@ static internal partial class My
                             $"'{arg}' is bad to {the.Name}");
                 }
             });
+
+    static internal
+        IInvokeOption<Non, Func<IEnumerable<ZipEntry>, IEnumerable<ZipEntry>>>
+        SelectStructure = new
+        NoValueOption<Non, Func<IEnumerable<ZipEntry>, IEnumerable<ZipEntry>>>(
+            "--dir-only",
+            init: (_) => (seq) => seq, alt: (_) =>
+            {
+                var dirnames = new HashSet<string>();
+
+                IEnumerable<ZipEntry> GetDir(IEnumerable<ZipEntry> seqThe)
+                {
+                    foreach (var entryThe in seqThe)
+                    {
+                        var dirThe = Path.GetDirectoryName(entryThe.Name);
+                        dirnames.Add(string.IsNullOrEmpty(dirThe)
+                            ? "." : dirThe);
+                    }
+
+                    foreach (var dirThe in dirnames)
+                    {
+                        Verbose.Invoke(dirThe);
+                    }
+
+                    return Enumerable.Empty<ZipEntry>();
+                }
+
+                var optThe = (IOption)TotalText;
+                optThe.Resolve(optThe,
+                    new string[] { optThe.Name });
+
+                optThe = (IOption)Verbose;
+                optThe.Resolve(optThe,
+                    new string[] { optThe.Name });
+
+                return (seq) => GetDir(seq);
+            });
 }
 
 [Command(name: "--list", shortcut: "-t", help: """
@@ -158,6 +195,7 @@ public class List : ICommandMaker
         (IOption) My.IsFileFound,
         (IOption) My.SortBy,
         (IOption) My.SumZip,
+        (IOption) My.SelectStructure,
         (IOption) My.FilesFrom,
     }.ToImmutableArray();
 
@@ -167,6 +205,7 @@ public class List : ICommandMaker
             ["-b"] = new string[] {
                 "--verbose", "--name-only", "--total-off"},
         }.ToImmutableDictionary();
+
     class CommandThe : MyCommand
     {
         public CommandThe() : base(
@@ -254,6 +293,7 @@ public class List : ICommandMaker
             .Where((it) => false == My.ExclFiles.Invoke(
                 Path.GetFileName(it.Name)))
             .Where((it) => My.IsFileFound.Invoke(it.Name))
+            .Invoke(My.SelectStructure.Invoke(Non.e))
             .Invoke(My.SumZip.Invoke);
         ins.Close();
         My.TotalText.Invoke(sumThe.ToString());
