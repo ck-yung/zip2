@@ -1,8 +1,12 @@
+using ICSharpCode.SharpZipLib.Zip;
 using System.Collections.Immutable;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
+using static zip2.Helper;
 
 namespace zip2;
+
 static class Helper
 {
     internal sealed class Non
@@ -142,5 +146,135 @@ static class Helper
             .ToArray();
         if (funcs.Length == 0) return (_) => true;
         return (arg) => funcs.Any((it) => it.Match(arg).Success);
+    }
+
+    static internal string ReducePentCent(long size, long compressedSize)
+    {
+        if (1 > size) return " 0";
+        if (compressedSize > size) return " 0";
+        compressedSize = size - compressedSize;
+        var ratio = 1000 * compressedSize / size;
+        ratio += 5; ratio /= 10;
+        if (98 < ratio) return "99";
+        return $"{ratio,2}";
+    }
+
+    static internal string KiloSize(long size)
+    {
+        var units = new char[] { 'P', 'T', 'G', 'M', 'k', ' ' };
+        string sizeToText(int ndx)
+        {
+            if (size < 10000) return $"{size,4}{units[ndx]}";
+            size += 512; size /= 1024;
+            return sizeToText(ndx - 1);
+        }
+        return sizeToText(units.Length - 1);
+    }
+
+    static internal IEnumerable<MyZipEntry> MyZipEntries(this ZipInputStream inpZs)
+    {
+        ZipEntry? entryThe;
+        while (null != (entryThe = inpZs.GetNextEntry()))
+        {
+            yield return new MyZipEntry(entryThe);
+        }
+    }
+}
+
+internal class MyZipEntry
+{
+    public string Name { get; init; }
+    public bool IsCrypted { get; init; }
+    public bool IsFile { get; init; }
+    public long Size { get; init; }
+    public long CompressedSize { get; init; }
+    public DateTime DateTime { get; init; }
+
+    public MyZipEntry(string name, bool isCrypted, bool isFile,
+        long size, long compressedSize, DateTime dateTime)
+    {
+        Name = name;
+        IsCrypted = isCrypted;
+        IsFile = isFile;
+        Size = size;
+        CompressedSize = compressedSize;
+        DateTime = dateTime;
+    }
+
+    public MyZipEntry(ZipEntry arg)
+    {
+        Name = arg.Name;
+        IsCrypted = arg.IsCrypted;
+        IsFile = arg.IsFile;
+        Size = arg.Size;
+        CompressedSize = arg.CompressedSize;
+        DateTime = arg.DateTime;
+    }
+}
+
+internal class SumZipEntry
+{
+    public string Name { get; init; }
+    public SumZipEntry(string name)
+    {
+        Name = name;
+    }
+
+    public SumZipEntry(string name, bool isFile)
+    {
+        Name = name;
+        if (isFile && File.Exists(name))
+        {
+            FileSize = new FileInfo(name).Length;
+            Name = Path.GetFileName(name) ?? ".";
+        }
+    }
+
+    public bool IsCrypted { get; private set; } = false;
+    public int Count { get; private set; } = 0;
+    public long Size { get; private set; } = 0;
+    public long FileSize { get; private set; } = 0;
+    public long CompressedSize { get; private set; } = 0;
+    public DateTime DateTime { get; private set; } = DateTime.MaxValue;
+    public DateTime Last { get; private set; } = DateTime.MinValue;
+
+    public override string ToString()
+    {
+        var rtn = new StringBuilder();
+        if (My.OtherColumnOpt.Invoke(Non.e))
+        {
+            rtn.Append(IsCrypted ? '*' : ' ');
+            var sizeThe = (FileSize > 0) ? FileSize : CompressedSize;
+            rtn.Append($"{ReducePentCent(Size, sizeThe)} ");
+            rtn.Append($"{KiloSize(Size)} ");
+            rtn.Append($"{DateTime:yyyy-MM-dd HH:mm} ");
+            rtn.Append($"- ");
+            rtn.Append($"{Last:yyyy-MM-dd HH:mm} ");
+        }
+        rtn.Append($"{Count,5:N0} ");
+        rtn.Append(Name);
+        return rtn.ToString();
+    }
+
+    public SumZipEntry AddWith(MyZipEntry entryThe)
+    {
+        Count += 1;
+        Size += entryThe.Size;
+        CompressedSize += entryThe.CompressedSize;
+        if (DateTime > entryThe.DateTime) DateTime = entryThe.DateTime;
+        if (Last < entryThe.DateTime) Last = entryThe.DateTime;
+        if (entryThe.IsCrypted) IsCrypted = true;
+        return this;
+    }
+
+    public SumZipEntry AddWith(SumZipEntry other)
+    {
+        Count += other.Count;
+        Size += other.Size;
+        CompressedSize += other.CompressedSize;
+        if (DateTime > other.DateTime) DateTime = other.DateTime;
+        if (Last < other.DateTime) Last = other.DateTime;
+        if (other.IsCrypted) IsCrypted = true;
+        return this;
     }
 }

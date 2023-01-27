@@ -29,8 +29,8 @@ static internal partial class My
     static internal Func<IEnumerable<SumZipEntry>, IEnumerable<SumZipEntry>> SortSumEntry
     { get; private set; } = (seq) => seq;
 
-    static internal IInvokeOption<IEnumerable<ZipEntry>, IEnumerable<ZipEntry>> SortBy
-        = new SingleValueOption<IEnumerable<ZipEntry>, IEnumerable<ZipEntry>>(
+    static internal IInvokeOption<IEnumerable<MyZipEntry>, IEnumerable<MyZipEntry>> SortBy
+        = new SingleValueOption<IEnumerable<MyZipEntry>, IEnumerable<MyZipEntry>>(
             "--sort", help: "name | date | size | ratio | last | count",
             shortcut: "-o", init: (it) => it,
             resolve: (the, arg) =>
@@ -49,9 +49,9 @@ static internal partial class My
                         return (seq) => seq.OrderBy((it) => it.Size);
                     case "ratio":
                         SortSumEntry = (seq) => seq.OrderBy((it) =>
-                        List.ReducePentCent(it.Size, it.CompressedSize));
+                        ReducePentCent(it.Size, it.CompressedSize));
                         return (seq) => seq.OrderBy((it) =>
-                        List.ReducePentCent(it.Size, it.CompressedSize));
+                        ReducePentCent(it.Size, it.CompressedSize));
                     case "last":
                         SortSumEntry = (seq) => seq.OrderBy((it) => it.Last);
                         return null;
@@ -64,8 +64,8 @@ static internal partial class My
                 }
             });
 
-    static internal IInvokeOption<IEnumerable<ZipEntry>, SumZipEntry> SumZip
-        = new SingleValueOption<IEnumerable<ZipEntry>, SumZipEntry>(
+    static internal IInvokeOption<IEnumerable<MyZipEntry>, SumZipEntry> SumZip
+        = new SingleValueOption<IEnumerable<MyZipEntry>, SumZipEntry>(
             "--sum", help: "ext | dir",
             init: (seq) => seq
             .Invoke(My.SortBy.Invoke)
@@ -76,8 +76,8 @@ static internal partial class My
                     var textThe = new StringBuilder();
                     textThe.Append(it.IsCrypted ? '*' : ' ');
                     textThe.Append(
-                        $"{List.ReducePentCent(it.Size, it.CompressedSize)} ");
-                    textThe.Append($"{List.KiloSize(it.Size)} ");
+                        $"{ReducePentCent(it.Size, it.CompressedSize)} ");
+                    textThe.Append($"{KiloSize(it.Size)} ");
                     textThe.Append($"{it.DateTime:yyyy-MM-dd HH:mm} ");
                     textThe.Append(it.Name);
                     Verbose.Invoke(textThe.ToString());
@@ -138,15 +138,15 @@ static internal partial class My
             });
 
     static internal
-        IInvokeOption<Non, Func<IEnumerable<ZipEntry>, IEnumerable<ZipEntry>>>
+        IInvokeOption<Non, Func<IEnumerable<MyZipEntry>, IEnumerable<MyZipEntry>>>
         SelectStructure = new
-        NoValueOption<Non, Func<IEnumerable<ZipEntry>, IEnumerable<ZipEntry>>>(
+        NoValueOption<Non, Func<IEnumerable<MyZipEntry>, IEnumerable<MyZipEntry>>>(
             "--dir-only",
             init: (_) => (seq) => seq, alt: (_) =>
             {
                 var dirnames = new HashSet<string>();
 
-                IEnumerable<ZipEntry> GetDir(IEnumerable<ZipEntry> seqThe)
+                IEnumerable<MyZipEntry> GetDir(IEnumerable<MyZipEntry> seqThe)
                 {
                     foreach (var entryThe in seqThe)
                     {
@@ -160,7 +160,7 @@ static internal partial class My
                         Verbose.Invoke(dirThe);
                     }
 
-                    return Enumerable.Empty<ZipEntry>();
+                    return Enumerable.Empty<MyZipEntry>();
                 }
 
                 var optThe = (IOption)TotalText;
@@ -215,38 +215,6 @@ public class List : ICommandMaker
         { }
     }
 
-    static internal IEnumerable<ZipEntry> GetEntries(ZipInputStream inpZs)
-    {
-        ZipEntry? entryThe;
-        while (null != (entryThe = inpZs.GetNextEntry()))
-        {
-            yield return entryThe;
-        }
-    }
-
-    static internal string ReducePentCent(long size, long compressedSize)
-    {
-        if (1 > size) return " 0";
-        if (compressedSize > size) return " 0";
-        compressedSize = size - compressedSize;
-        var ratio = 1000 * compressedSize / size;
-        ratio += 5; ratio /= 10;
-        if (98 < ratio) return "99";
-        return $"{ratio,2}";
-    }
-
-    static internal string KiloSize(long size)
-    {
-        var units = new char[] { 'P', 'T', 'G', 'M', 'k', ' ' };
-        string sizeToText(int ndx)
-        {
-            if (size < 10000) return $"{size,4}{units[ndx]}";
-            size += 512; size /= 1024;
-            return sizeToText(ndx-1);
-        }
-        return sizeToText(units.Length - 1);
-    }
-
     static bool Invoke(string[] args)
     {
         if (args.Contains(CommandMaker.HelpText))
@@ -269,7 +237,7 @@ public class List : ICommandMaker
             .Select((it) => Helper.ToStandFilename(it))
             .ToArray();
 
-        Func<ZipEntry, bool> checkZipEntryName =
+        Func<MyZipEntry, bool> checkZipEntryName =
             (args.Length, namesFromFile.Length) switch
             {
                 (0, 0) => (_) => true,
@@ -287,8 +255,8 @@ public class List : ICommandMaker
             return false;
         }
 
-        var inpZs = new ZipInputStream(ins);
-        var sumThe = GetEntries(inpZs)
+        ZipInputStream inpZs = new ZipInputStream(ins);
+        var sumThe = inpZs.MyZipEntries()
             .Where((it) => checkZipEntryName(it))
             .Where((it) => false == My.ExclFiles.Invoke(
                 Path.GetFileName(it.Name)))
@@ -298,72 +266,5 @@ public class List : ICommandMaker
         ins.Close();
         My.TotalText.Invoke(sumThe.ToString());
         return true;
-    }
-}
-
-internal class SumZipEntry
-{
-    public string Name { get; init; }
-    public SumZipEntry(string name)
-    {
-        Name = name;
-    }
-
-    public SumZipEntry(string name, bool isFile)
-    {
-        Name = name;
-        if (isFile && File.Exists(name))
-        {
-            FileSize = new FileInfo(name).Length;
-            Name = Path.GetFileName(name) ?? ".";
-        }
-    }
-
-    public bool IsCrypted { get; private set; } = false;
-    public int Count { get; private set; } = 0;
-    public long Size { get; private set; } = 0;
-    public long FileSize { get; private set; } = 0;
-    public long CompressedSize { get; private set; } = 0;
-    public DateTime DateTime { get; private set; } = DateTime.MaxValue;
-    public DateTime Last { get; private set; } = DateTime.MinValue;
-
-    public override string ToString()
-    {
-        var rtn = new StringBuilder();
-        if (My.OtherColumnOpt.Invoke(Non.e))
-        {
-            rtn.Append(IsCrypted ? '*' : ' ');
-            var sizeThe = (FileSize > 0) ? FileSize : CompressedSize;
-            rtn.Append($"{List.ReducePentCent(Size, sizeThe)} ");
-            rtn.Append($"{List.KiloSize(Size)} ");
-            rtn.Append($"{DateTime:yyyy-MM-dd HH:mm} ");
-            rtn.Append($"- ");
-            rtn.Append($"{Last:yyyy-MM-dd HH:mm} ");
-        }
-        rtn.Append($"{Count,5:N0} ");
-        rtn.Append(Name);
-        return rtn.ToString();
-    }
-
-    public SumZipEntry AddWith(ZipEntry entryThe)
-    {
-        Count += 1;
-        Size += entryThe.Size;
-        CompressedSize += entryThe.CompressedSize;
-        if (DateTime > entryThe.DateTime) DateTime = entryThe.DateTime;
-        if (Last < entryThe.DateTime) Last = entryThe.DateTime;
-        if (entryThe.IsCrypted) IsCrypted = true;
-        return this;
-    }
-
-    public SumZipEntry AddWith(SumZipEntry other)
-    {
-        Count += other.Count;
-        Size += other.Size;
-        CompressedSize += other.CompressedSize;
-        if (DateTime > other.DateTime) DateTime = other.DateTime;
-        if (Last < other.DateTime) Last = other.DateTime;
-        if (other.IsCrypted) IsCrypted = true;
-        return this;
     }
 }

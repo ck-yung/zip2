@@ -104,7 +104,7 @@ public class Extract : ICommandMaker
             .Select((it) => Helper.ToStandFilename(it))
             .ToArray();
 
-        Func<ZipEntry, bool> checkZipEntryName =
+        Func<MyZipEntry, bool> checkZipEntryName =
             (args.Length, namesFromFile.Length) switch
             {
                 (0, 0) => (_) => true,
@@ -118,9 +118,9 @@ public class Extract : ICommandMaker
         var buffer1 = new byte[32 * 1024];
         var buffer2 = new byte[32 * 1024];
 
-        var inpZs = new ZipInputStream(ins);
         var toOutDir = My.ToOutDir.Invoke(true);
-        var count = List.GetEntries(inpZs)
+        var inpZs = new ZipInputStream(ins);
+        var count = inpZs.MyZipEntries()
             .Where((it) => it.IsFile)
             .Where((it) => checkZipEntryName(it))
             .Where((it) => false == My.ExclFiles.Invoke(
