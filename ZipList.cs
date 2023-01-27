@@ -1,4 +1,5 @@
 using ICSharpCode.SharpZipLib.Zip;
+using SharpCompress.Archives.Rar;
 using System.Collections.Immutable;
 using System.Text;
 using static zip2.Helper;
@@ -255,8 +256,18 @@ public class List : ICommandMaker
             return false;
         }
 
-        ZipInputStream inpZs = new ZipInputStream(ins);
-        var sumThe = inpZs.MyZipEntries()
+        var extThe = Path.GetExtension(My.ZipFilename).ToLower();
+
+        IEnumerable<MyZipEntry> seqThe = (extThe) switch
+        {
+            ".zip" => new ZipInputStream(ins).MyZipEntries(),
+            ".rar" => RarArchive.Open(ins, new SharpCompress.Readers
+            .ReaderOptions() { LeaveStreamOpen = true }).MyRarEntries(),
+            _ => throw new MyArgumentException(
+                $"'{extThe}' is unknown extension"),
+        };
+
+        var sumThe = seqThe
             .Where((it) => checkZipEntryName(it))
             .Where((it) => false == My.ExclFiles.Invoke(
                 Path.GetFileName(it.Name)))

@@ -1,4 +1,5 @@
 using ICSharpCode.SharpZipLib.Zip;
+using SharpCompress.Archives.Rar;
 using System.Collections.Immutable;
 using System.Reflection;
 using System.Text;
@@ -179,6 +180,14 @@ static class Helper
             yield return new MyZipEntry(entryThe);
         }
     }
+
+    static internal IEnumerable<MyZipEntry> MyRarEntries(this RarArchive inpRars)
+    {
+        foreach (var entryThe in inpRars.Entries)
+        {
+            yield return new MyZipEntry(entryThe);
+        }
+    }
 }
 
 internal class MyZipEntry
@@ -209,6 +218,16 @@ internal class MyZipEntry
         Size = arg.Size;
         CompressedSize = arg.CompressedSize;
         DateTime = arg.DateTime;
+    }
+
+    public MyZipEntry(RarArchiveEntry arg)
+    {
+        Name = arg.Key;
+        IsCrypted = arg.IsEncrypted;
+        IsFile = false == arg.IsDirectory;
+        Size = arg.Size;
+        CompressedSize = arg.CompressedSize;
+        DateTime = arg.LastModifiedTime ?? DateTime.MinValue;
     }
 }
 
