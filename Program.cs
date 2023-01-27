@@ -23,7 +23,14 @@ class Program
         }
         catch (Exception ee)
         {
-            Console.WriteLine(ee);
+            if (Helper.GetExeEnvr().Contains(":dump-stack:"))
+            {
+                Console.WriteLine(ee);
+            }
+            else
+            {
+                Console.WriteLine($"{ee.GetType()}: {ee.Message}");
+            }
         }
     }
 

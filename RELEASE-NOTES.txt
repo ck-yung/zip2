@@ -1,0 +1,10 @@
+Major change
+1. Support to list the content of a RAR file.
+2. Support to extract content from a RAR file.
+3. New options to list file:
+   -b           List filename only
+   -F DIR       List filename if it is found on DIR
+   -o name      Sort by filenmae
+   --dir-only   Show dir only
+4. New option to extract file:
+   --no-dir     Remove the original dir

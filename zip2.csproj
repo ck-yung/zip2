@@ -16,6 +16,15 @@
     <PackageReference Include="SharpZipLib" Version="1.4.1" />
   </ItemGroup>
 
+  <Target Name="PreparePackageReleaseNotesFromFile" BeforeTargets="GenerateNuspec">
+    <ReadLinesFromFile File="RELEASE-NOTES.txt">
+      <Output TaskParameter="Lines" ItemName="ReleaseNoteLines" />
+    </ReadLinesFromFile>
+    <PropertyGroup>
+      <PackageReleaseNotes>@(ReleaseNoteLines, '%0a')</PackageReleaseNotes>
+    </PropertyGroup>
+  </Target>
+
   <PropertyGroup>
     <Title>zip2</Title>
     <PackageId>zip2</PackageId>
@@ -31,7 +40,7 @@
     <Company>https://github.com/ck-yung/zip2</Company>
     <ToolCommandName>zip2</ToolCommandName>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <PackageReleaseNotes>Migrate to the common syntax of command-line argument.</PackageReleaseNotes>
+    <PackageReleaseNotes>@(ReleaseNoteLines, '%0a')</PackageReleaseNotes>
     <PackageTags>zip</PackageTags>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>

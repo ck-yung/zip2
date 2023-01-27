@@ -92,7 +92,7 @@ public class Create : ICommandMaker
         {
             Console.WriteLine(
                 """
-                create zip file:
+                Create zip file:
                   zip2 -cf NEW-ZIP [OPTION ..] FILE [FILE ..]
                   zip2 -cf NEW-ZIP [OPTION ..] -T - [FILE ..]
                 For example,
@@ -101,6 +101,13 @@ public class Create : ICommandMaker
                 """);
             Helper.PrintHelp(MyOptions, MyShortcutArrays);
             return false;
+        }
+
+        var extThe = Path.GetExtension(My.ZipFilename).ToLower();
+        if (extThe!=".zip")
+        {
+            throw new MyArgumentException(
+                $"Ext should be '.zip' but '{extThe}' is found!");
         }
 
         var ins = My.OpenZip.Invoke((false, "'zip2 -c?' for help"));
