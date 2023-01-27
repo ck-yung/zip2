@@ -103,18 +103,18 @@ public class Create : ICommandMaker
             return false;
         }
 
-        var extThe = Path.GetExtension(My.ZipFilename).ToLower();
-        if (extThe!=".zip")
-        {
-            throw new MyArgumentException(
-                $"Ext should be '.zip' but '{extThe}' is found!");
-        }
-
         var ins = My.OpenZip.Invoke((false, "'zip2 -c?' for help"));
         if (ins == Stream.Null)
         {
             Console.WriteLine("Create failed.");
             return false;
+        }
+
+        var extThe = Path.GetExtension(My.ZipFilename).ToLower();
+        if (extThe != ".zip")
+        {
+            throw new MyArgumentException(
+                $"Ext should be '.zip' but '{extThe}' is found!");
         }
 
         int cntAdded = 0;
