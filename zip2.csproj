@@ -19,8 +19,8 @@
   <PropertyGroup>
     <Title>zip2</Title>
     <PackageId>zip2</PackageId>
-    <PackageVersion>2.0.1.1</PackageVersion>
-    <Version>2.0.1.1</Version>
+    <PackageVersion>2.0.2.0</PackageVersion>
+    <Version>2.0.2.0</Version>
     <Authors>Yung, Chun Kau</Authors>
     <Description>Command line tool for zip file.</Description>
     <Summary>

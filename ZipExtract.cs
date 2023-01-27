@@ -1,4 +1,5 @@
 using ICSharpCode.SharpZipLib.Zip;
+using SharpCompress.Archives.Rar;
 using System.Collections.Immutable;
 using static zip2.Helper;
 
@@ -117,10 +118,9 @@ public class Extract : ICommandMaker
 
         var buffer1 = new byte[32 * 1024];
         var buffer2 = new byte[32 * 1024];
-
         var toOutDir = My.ToOutDir.Invoke(true);
-        var inpZs = new ZipInputStream(ins);
-        var count = inpZs.MyZipEntries()
+
+        var count = MyZipEntry.GetEntries(ins, My.ZipFilename)
             .Where((it) => it.IsFile)
             .Where((it) => checkZipEntryName(it))
             .Where((it) => false == My.ExclFiles.Invoke(
@@ -148,9 +148,10 @@ public class Extract : ICommandMaker
                     return true;
                 }
 
+                var entryStream = it.OpenStream();
                 int readSize = 0;
                 bool isBuffer1Read = true;
-                var taskRead = inpZs.ReadAsync(buffer1, 0, buffer1.Length);
+                var taskRead = entryStream.ReadAsync(buffer1, 0, buffer1.Length);
                 var taskWrite = Stream.Null.WriteAsync(buffer2, 0, 0);
                 while (true)
                 {
@@ -162,16 +163,17 @@ public class Extract : ICommandMaker
                     if (isBuffer1Read)
                     {
                         isBuffer1Read = false;
-                        taskRead = inpZs.ReadAsync(buffer2, 0, buffer2.Length);
+                        taskRead = entryStream.ReadAsync(buffer2, 0, buffer2.Length);
                         taskWrite = outs.WriteAsync(buffer1, 0, readSize);
                     }
                     else
                     {
                         isBuffer1Read = true;
-                        taskRead = inpZs.ReadAsync(buffer1, 0, buffer1.Length);
+                        taskRead = entryStream.ReadAsync(buffer1, 0, buffer1.Length);
                         taskWrite = outs.WriteAsync(buffer2, 0, readSize);
                     }
                 }
+                it.CloseStream(entryStream);
                 outs.Close();
 
                 if (File.Exists(targetFilename))

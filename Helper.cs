@@ -1,6 +1,7 @@
 using ICSharpCode.SharpZipLib.Zip;
 using SharpCompress.Archives.Rar;
 using System.Collections.Immutable;
+using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -177,7 +178,7 @@ static class Helper
         ZipEntry? entryThe;
         while (null != (entryThe = inpZs.GetNextEntry()))
         {
-            yield return new MyZipEntry(entryThe);
+            yield return new MyZipEntry(entryThe, inpZs);
         }
     }
 
@@ -192,13 +193,28 @@ static class Helper
 
 internal class MyZipEntry
 {
+    static public IEnumerable<MyZipEntry> GetEntries(Stream ins, string filename)
+    {
+        var extThe = Path.GetExtension(My.ZipFilename).ToLower();
+        return (extThe) switch
+        {
+            ".zip" => new ZipInputStream(ins).MyZipEntries(),
+            ".rar" => RarArchive.Open(ins, new SharpCompress.Readers
+            .ReaderOptions()
+            { LeaveStreamOpen = true }).MyRarEntries(),
+            _ => throw new MyArgumentException(
+                $"'{extThe}' is unknown extension"),
+        };
+    }
+
     public string Name { get; init; }
     public bool IsCrypted { get; init; }
     public bool IsFile { get; init; }
     public long Size { get; init; }
     public long CompressedSize { get; init; }
     public DateTime DateTime { get; init; }
-
+    public Func<Stream> OpenStream { get; init; }
+    public Action<Stream> CloseStream { get; init; }
     public MyZipEntry(string name, bool isCrypted, bool isFile,
         long size, long compressedSize, DateTime dateTime)
     {
@@ -208,9 +224,11 @@ internal class MyZipEntry
         Size = size;
         CompressedSize = compressedSize;
         DateTime = dateTime;
+        OpenStream = () => Stream.Null;
+        CloseStream = (_) => { };
     }
 
-    public MyZipEntry(ZipEntry arg)
+    public MyZipEntry(ZipEntry arg, ZipInputStream stream)
     {
         Name = arg.Name;
         IsCrypted = arg.IsCrypted;
@@ -218,6 +236,8 @@ internal class MyZipEntry
         Size = arg.Size;
         CompressedSize = arg.CompressedSize;
         DateTime = arg.DateTime;
+        OpenStream = () => stream;
+        CloseStream = (_) => { };
     }
 
     public MyZipEntry(RarArchiveEntry arg)
@@ -228,6 +248,8 @@ internal class MyZipEntry
         Size = arg.Size;
         CompressedSize = arg.CompressedSize;
         DateTime = arg.LastModifiedTime ?? DateTime.MinValue;
+        OpenStream = arg.OpenEntryStream;
+        CloseStream = (it) => it.Close();
     }
 }
 
