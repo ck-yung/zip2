@@ -1,4 +1,9 @@
 Major change
+
+v2.0.2.2
+1. Add option "--format" to list and extract command.
+
+v2.0.2.1
 1. Support to list the content of a RAR file.
 2. Support to extract content from a RAR file.
 3. New options to list file:

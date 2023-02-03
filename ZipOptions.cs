@@ -95,6 +95,16 @@ static internal partial class My
             },
             init: (msg) => Non.e);
 
+    static internal IInvokeOption<string, Non> LogError
+        = new NoValueOption<string, Non>(
+            "--quiet", shortcut: "-q",
+            init: (msg) =>
+            {
+                Console.Error.WriteLine(msg);
+                return Non.e;
+            },
+            alt: (msg) => Non.e);
+
     static internal IInvokeOption<string, Non> TotalText
         = new NoValueOption<string, Non>(
             "--total-off",

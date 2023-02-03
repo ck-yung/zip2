@@ -28,14 +28,14 @@
   <PropertyGroup>
     <Title>zip2</Title>
     <PackageId>zip2</PackageId>
-    <PackageVersion>2.0.2.1</PackageVersion>
-    <Version>2.0.2.1</Version>
+    <PackageVersion>2.0.2.2</PackageVersion>
+    <Version>2.0.2.2</Version>
     <Authors>Yung, Chun Kau</Authors>
-    <Description>Command line tool for zip file.</Description>
+    <Description>Command line tool for ZIP/RAR file.</Description>
     <Summary>
-       C# source https://github.com/ck-yung/zip2.
+       C# source https://github.com/ck-yung/zip2
    </Summary>
-    <PackageTags>zip</PackageTags>
+    <PackageTags>zip;rar</PackageTags>
     <PackAsTool>true</PackAsTool>
     <Company>https://github.com/ck-yung/zip2</Company>
     <ToolCommandName>zip2</ToolCommandName>
@@ -52,6 +52,7 @@
     <RepositoryType>git</RepositoryType>
     <PackageDependencies></PackageDependencies>
     <PackageDevelopmentDependency></PackageDevelopmentDependency>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,17 +1,18 @@
 using ICSharpCode.SharpZipLib.Zip;
 using SharpCompress.Archives.Rar;
 using System.Collections.Immutable;
+using System.Net;
 using System.Text;
 using static zip2.Helper;
 namespace zip2;
 
 static internal partial class My
 {
-    static internal IInvokeOption<Non, bool> OtherColumnOpt
+    static internal readonly IInvokeOption<Non, bool> OtherColumnOpt
         = new NoValueOption<Non, bool>("--name-only",
             init: (_) => true, alt: (_) => false);
 
-    static internal IInvokeOption<string, bool> IsFileFound
+    static internal readonly IInvokeOption<string, bool> IsFileFound
         = new SingleValueOption<string, bool>(
             "--if-find-on", shortcut: "-F", help: "DIR",
             init: (_) => true,
@@ -27,11 +28,11 @@ static internal partial class My
                     ToLocalFilename(path)));
             });
 
-    static internal Func<IEnumerable<SumZipEntry>, IEnumerable<SumZipEntry>> SortSumEntry
-    { get; private set; } = (seq) => seq;
+    static internal Func<IEnumerable<SumZipEntry>, IEnumerable<SumZipEntry>>
+        SortSumEntry { get; private set; } = (seq) => seq;
 
-    static internal IInvokeOption<IEnumerable<MyZipEntry>, IEnumerable<MyZipEntry>> SortBy
-        = new SingleValueOption<IEnumerable<MyZipEntry>, IEnumerable<MyZipEntry>>(
+    static internal readonly IInvokeOption<IEnumerable<MyZipEntry>, IEnumerable<MyZipEntry>>
+        SortBy = new SingleValueOption<IEnumerable<MyZipEntry>, IEnumerable<MyZipEntry>>(
             "--sort", help: "name | date | size | ratio | last | count",
             shortcut: "-o", init: (it) => it,
             resolve: (the, arg) =>
@@ -65,8 +66,8 @@ static internal partial class My
                 }
             });
 
-    static internal IInvokeOption<IEnumerable<MyZipEntry>, SumZipEntry> SumZip
-        = new SingleValueOption<IEnumerable<MyZipEntry>, SumZipEntry>(
+    static internal readonly IInvokeOption<IEnumerable<MyZipEntry>, SumZipEntry>
+        SumZip = new SingleValueOption<IEnumerable<MyZipEntry>, SumZipEntry>(
             "--sum", help: "ext | dir",
             init: (seq) => seq
             .Invoke(My.SortBy.Invoke)
@@ -138,7 +139,7 @@ static internal partial class My
                 }
             });
 
-    static internal
+    static internal readonly
         IInvokeOption<Non, Func<IEnumerable<MyZipEntry>, IEnumerable<MyZipEntry>>>
         SelectStructure = new
         NoValueOption<Non, Func<IEnumerable<MyZipEntry>, IEnumerable<MyZipEntry>>>(
@@ -174,6 +175,22 @@ static internal partial class My
 
                 return (seq) => GetDir(seq);
             });
+
+    static internal readonly IInvokeOption<(Stream, string), IEnumerable<MyZipEntry>>
+        FileFormatOpt = new
+        SingleValueOption<(Stream, string), IEnumerable<MyZipEntry>>(
+            "--format", help: "auto | zip | rar",
+            init: (arg) => MyZipEntry.GetEntries(arg.Item1, arg.Item2),
+            resolve: (the, arg) => (arg) switch
+            {
+                "auto" => (it) => MyZipEntry.GetEntries(it.Item1, it.Item2),
+                "zip" => (it) => new ZipInputStream(it.Item1).MyZipEntries(),
+                "rar" => (it) => RarArchive.Open(it.Item1,
+                    new SharpCompress.Readers.ReaderOptions()
+                    { LeaveStreamOpen = true }).MyRarEntries(),
+                _ => throw new MyArgumentException(
+                    $"'{arg}' is bad to {the.Name}"),
+            });
 }
 
 [Command(name: "--list", shortcut: "-t", help: """
@@ -198,6 +215,7 @@ public class List : ICommandMaker
         (IOption) My.SumZip,
         (IOption) My.SelectStructure,
         (IOption) My.FilesFrom,
+        (IOption) My.FileFormatOpt,
     }.ToImmutableArray();
 
     static readonly ImmutableDictionary<string, string[]> MyShortcuts =
@@ -205,6 +223,8 @@ public class List : ICommandMaker
         {
             ["-b"] = new string[] {
                 "--verbose", "--name-only", "--total-off"},
+            ["-Z"] = new string[] { "--format", "zip"},
+            ["-R"] = new string[] { "--format", "rar" },
         }.ToImmutableDictionary();
 
     class CommandThe : MyCommand
@@ -256,7 +276,7 @@ public class List : ICommandMaker
             return false;
         }
 
-        var sumThe = MyZipEntry.GetEntries(ins, My.ZipFilename)
+        var sumThe = My.FileFormatOpt.Invoke((ins, My.ZipFilename))
             .Where((it) => checkZipEntryName(it))
             .Where((it) => false == My.ExclFiles.Invoke(
                 Path.GetFileName(it.Name)))

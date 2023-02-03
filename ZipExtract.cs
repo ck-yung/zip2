@@ -7,7 +7,7 @@ namespace zip2;
 
 static internal partial class My
 {
-    static internal IInvokeOption<bool, Func<string, string>> ToOutDir
+    static internal readonly IInvokeOption<bool, Func<string, string>> ToOutDir
         = new SingleValueOption<bool, Func<string, string>>(
             "--out-dir", help: "OUTPUT-DIR", shortcut: "-O",
             init: (_) => (it) => it,
@@ -28,7 +28,7 @@ static internal partial class My
                 };
             });
 
-    static internal IInvokeOption<string, Stream> CreateExtractFile
+    static internal readonly IInvokeOption<string, Stream> CreateExtractFile
         = new NoValueOption<string, Stream>(
             "--overwrite", shortcut: "-o",
             init: (path) =>
@@ -39,7 +39,7 @@ static internal partial class My
             },
             alt: (path) => File.Create(path));
 
-    static internal IInvokeOption<string, string> PathNameOpt
+    static internal readonly IInvokeOption<string, string> PathNameOpt
         = new NoValueOption<string, string>(
             "--no-dir", init: (path) => path,
             alt: (path) => Path.GetFileName(path));
@@ -55,23 +55,35 @@ public class Extract : ICommandMaker
         return new CommandThe();
     }
 
-    static ImmutableArray<IOption> MyOptions = new IOption[]
+    static readonly ImmutableArray<IOption> MyOptions = new IOption[]
     {
         (IOption) My.OpenZip,
         (IOption) My.Verbose,
+        (IOption) My.LogError,
         (IOption) My.TotalText,
         (IOption) My.PathNameOpt,
         (IOption) My.ToOutDir,
         (IOption) My.CreateExtractFile,
         (IOption) My.ExclFiles,
         (IOption) My.FilesFrom,
+        (IOption) My.FileFormatOpt,
     }.ToImmutableArray();
+
+    static readonly ImmutableDictionary<string, string[]> MyShortcuts =
+        new Dictionary<string, string[]>
+        {
+            ["-b"] = new string[] {
+                "--verbose", "--name-only", "--total-off"},
+            ["-Z"] = new string[] { "--format", "zip" },
+            ["-R"] = new string[] { "--format", "rar" },
+        }.ToImmutableDictionary();
 
     class CommandThe : MyCommand
     {
         public CommandThe() : base(
             invoke: (args) => Extract.Invoke(args),
-            options: MyOptions)
+            options: MyOptions,
+            shortcutArrays: MyShortcuts)
         { }
     }
 
@@ -86,7 +98,8 @@ public class Extract : ICommandMaker
 
                 Output dir will be 'ZIP-FILE' if '--out-dir -'
                 """);
-            Helper.PrintHelp(MyOptions);
+            Helper.PrintHelp(MyOptions,
+                shortcutArrays: MyShortcuts);
             return false;
         }
 
@@ -120,7 +133,7 @@ public class Extract : ICommandMaker
         var buffer2 = new byte[32 * 1024];
         var toOutDir = My.ToOutDir.Invoke(true);
 
-        var count = MyZipEntry.GetEntries(ins, My.ZipFilename)
+        var count = My.FileFormatOpt.Invoke((ins, My.ZipFilename))
             .Where((it) => it.IsFile)
             .Where((it) => checkZipEntryName(it))
             .Where((it) => false == My.ExclFiles.Invoke(
@@ -138,7 +151,7 @@ public class Extract : ICommandMaker
                 var outs = My.CreateExtractFile.Invoke(targetFilename);
                 if (outs == Stream.Null)
                 {
-                    My.Verbose.Invoke($"Skip existing {targetFilename}");
+                    My.LogError.Invoke($"Skip existing {targetFilename}");
                     return false;
                 }
                 My.Verbose.Invoke(targetFilename);

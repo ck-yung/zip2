@@ -5,7 +5,7 @@ namespace zip2;
 
 static internal partial class My
 {
-    static internal IInvokeOption<ZipOutputStream, int> CompressLevel
+    static internal readonly IInvokeOption<ZipOutputStream, int> CompressLevel
         = new SingleValueOption<ZipOutputStream, int>(
             "--level", help: "storage | faster | fast | smallest",
             init: (it) =>
@@ -59,7 +59,7 @@ public class Create : ICommandMaker
         return new CommandThe();
     }
 
-    static ImmutableArray<IOption> MyOptions = new IOption[]
+    static readonly ImmutableArray<IOption> MyOptions = new IOption[]
     {
         (IOption) My.OpenZip,
         (IOption) My.Verbose,
@@ -68,7 +68,7 @@ public class Create : ICommandMaker
         (IOption) My.FilesFrom,
     }.ToImmutableArray();
 
-    static ImmutableDictionary<string, string[]> MyShortcutArrays =
+    static readonly ImmutableDictionary<string, string[]> MyShortcutArrays =
         new Dictionary<string, string[]>
         {
             ["-0"] = new[] { "--level", "storage" },
