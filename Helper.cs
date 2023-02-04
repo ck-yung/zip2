@@ -92,7 +92,7 @@ static class Helper
         Console.WriteLine("OPTION:");
         foreach (var opt in opts)
         {
-            Console.WriteLine($"  {opt.Name,12}  {opt.Shortcut,2}  {opt.Help}");
+            Console.WriteLine($"  {opt.Name,13}  {opt.Shortcut,2}  {opt.Help}");
         }
 
         if (shortcutArrays.Any())
@@ -213,10 +213,11 @@ internal class MyZipEntry
     public long Size { get; init; }
     public long CompressedSize { get; init; }
     public DateTime DateTime { get; init; }
+    public long Crc { get; init; }
     public Func<Stream> OpenStream { get; init; }
     public Action<Stream> CloseStream { get; init; }
     public MyZipEntry(string name, bool isCrypted, bool isFile,
-        long size, long compressedSize, DateTime dateTime)
+        long size, long compressedSize, DateTime dateTime, long crc)
     {
         Name = name;
         IsCrypted = isCrypted;
@@ -224,6 +225,7 @@ internal class MyZipEntry
         Size = size;
         CompressedSize = compressedSize;
         DateTime = dateTime;
+        Crc = crc;
         OpenStream = () => Stream.Null;
         CloseStream = (_) => { };
     }
@@ -236,6 +238,7 @@ internal class MyZipEntry
         Size = arg.Size;
         CompressedSize = arg.CompressedSize;
         DateTime = arg.DateTime;
+        Crc = arg.Crc;
         OpenStream = () => stream;
         CloseStream = (_) => { };
     }
@@ -248,6 +251,7 @@ internal class MyZipEntry
         Size = arg.Size;
         CompressedSize = arg.CompressedSize;
         DateTime = arg.LastModifiedTime ?? DateTime.MinValue;
+        Crc = arg.Crc;
         OpenStream = arg.OpenEntryStream;
         CloseStream = (it) => it.Close();
     }
@@ -285,9 +289,10 @@ internal class SumZipEntry
         if (My.OtherColumnOpt.Invoke(Non.e))
         {
             rtn.Append(IsCrypted ? '*' : ' ');
+            rtn.Append(My.Crc32Opt.Invoke(null));
             var sizeThe = (FileSize > 0) ? FileSize : CompressedSize;
             rtn.Append($"{ReducePentCent(Size, sizeThe)} ");
-            rtn.Append($"{KiloSize(Size)} ");
+            rtn.Append(My.SizeFormat.Invoke(Size));
             rtn.Append($"{DateTime:yyyy-MM-dd HH:mm} ");
             rtn.Append($"- ");
             rtn.Append($"{Last:yyyy-MM-dd HH:mm} ");

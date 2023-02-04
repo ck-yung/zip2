@@ -1,7 +1,6 @@
 using ICSharpCode.SharpZipLib.Zip;
 using SharpCompress.Archives.Rar;
 using System.Collections.Immutable;
-using System.Net;
 using System.Text;
 using static zip2.Helper;
 namespace zip2;
@@ -77,9 +76,10 @@ static internal partial class My
                 {
                     var textThe = new StringBuilder();
                     textThe.Append(it.IsCrypted ? '*' : ' ');
+                    textThe.Append(My.Crc32Opt.Invoke(it));
                     textThe.Append(
                         $"{ReducePentCent(it.Size, it.CompressedSize)} ");
-                    textThe.Append($"{KiloSize(it.Size)} ");
+                    textThe.Append(My.SizeFormat.Invoke(it.Size));
                     textThe.Append($"{it.DateTime:yyyy-MM-dd HH:mm} ");
                     textThe.Append(it.Name);
                     Verbose.Invoke(textThe.ToString());
@@ -191,6 +191,30 @@ static internal partial class My
                 _ => throw new MyArgumentException(
                     $"'{arg}' is bad to {the.Name}"),
             });
+
+    static internal readonly IInvokeOption<long, string> SizeFormat = new
+        SingleValueOption<long, string>("--size-format", help: "short | WIDTH",
+        init: (it) => $"{KiloSize(it)} ",
+        resolve: (the, arg) =>
+        {
+            if (string.IsNullOrEmpty(arg)) return null;
+            if (arg == "short") return (it) => $"{KiloSize(it)} ";
+            if (int.TryParse(arg, out var width))
+            {
+                if (width > 30)
+                    throw new ArgumentException(
+                        $"'{arg}' is too largth width to {the.Name}");
+                var fmtThe = $"{{0,{width}}} ";
+                return (it) => string.Format(fmtThe, it);
+            }
+            throw new MyArgumentException(
+                $"'{arg}' is bad to {the.Name}");
+        });
+
+    static internal readonly IInvokeOption<MyZipEntry?, string> Crc32Opt = new
+        NoValueOption<MyZipEntry?, string>("--show-crc",
+        init: (_) => string.Empty, //12345678_
+        alt: (it) => (it == null) ? "         " : $"{it.Crc:x8} ");
 }
 
 [Command(name: "--list", shortcut: "-t", help: """
@@ -211,6 +235,8 @@ public class List : ICommandMaker
         (IOption) My.TotalText,
         (IOption) My.ExclFiles,
         (IOption) My.IsFileFound,
+        (IOption) My.SizeFormat,
+        (IOption) My.Crc32Opt,
         (IOption) My.SortBy,
         (IOption) My.SumZip,
         (IOption) My.SelectStructure,
