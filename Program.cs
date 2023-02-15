@@ -25,11 +25,20 @@ class Program
         {
             if (Helper.GetExeEnvr().Contains(":dump-stack:"))
             {
+                Console.WriteLine(My.ZipFilename ?? "*undefine-zipfile*");
                 Console.WriteLine(ee);
             }
             else
             {
-                Console.WriteLine($"{ee.GetType()}: {ee.Message}");
+                if (string.IsNullOrEmpty(My.ZipFilename))
+                {
+                    Console.WriteLine($"{ee.GetType()}: {ee.Message}");
+                }
+                else
+                {
+                    Console.WriteLine(
+                        $"File: '{My.ZipFilename}'; {ee.GetType()}: {ee.Message}");
+                }
             }
         }
     }

@@ -20,10 +20,43 @@ static internal partial class My
                     ZipFilename = arg;
                     if (it.Item1)
                     {
-                        if (false == File.Exists(arg))
+                        if (false == File.Exists(ZipFilename))
+                        {
+                            var dir3 = Path.GetDirectoryName(ZipFilename);
+                            if (string.IsNullOrEmpty(dir3)) dir3 = ".";
+                            if (dir3.EndsWith(':'))
+                            {
+                                dir3 += '.';
+                                dir3 += Path.DirectorySeparatorChar;
+                            }
+                            if (!Directory.Exists(dir3))
+                            {
+                                throw new MyArgumentException($"Dir '{dir3}' is NOT found.");
+                            }
+                            var name3 = Path.GetFileName(ZipFilename);
+                            if (string.IsNullOrEmpty(name3))
+                            {
+                                throw new MyArgumentException($"'{ZipFilename}' is NOT filename.");
+                            }
+                            var aa = Directory.GetFiles(dir3, name3);
+                            if ((aa==null) || (aa.Length==0))
+                            {
+                                throw new MyArgumentException(
+                                    $"No file is matched to '{ZipFilename}'");
+                            }
+                            if (aa.Length > 1)
+                            {
+                                throw new MyArgumentException(
+                                    $"{aa.Length} files are matched to '{ZipFilename}'");
+                            }
+                            ZipFilename = aa[0];
+                        }
+                        if (false == File.Exists(ZipFilename))
+                        {
                             throw new MyArgumentException(
-                                $"But input '{arg}' is NOT found!");
-                        return File.OpenRead(arg);
+                                $"But input '{ZipFilename}' is NOT found!");
+                        }
+                        return File.OpenRead(ZipFilename);
                     }
                     if (File.Exists(arg))
                         throw new MyArgumentException(
