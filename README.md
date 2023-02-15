@@ -6,6 +6,12 @@
 zip2 -xf ..\backup.zip -O restore-dir
 ```
 
+## Specified Example:
+Backup files in dir ```srcDir```, which timestamp is within 2 hours, into a new zip file.
+```
+dir2 srcDir -bsk --within 2hour | zip2 -cf ..\new.zip -T -
+```
+
 ## Syntax:
 ```
 zip2 -cf NEW-ZIP-FILENAME [OPTION ..] [FILE ..]
@@ -17,13 +23,7 @@ zip2 -f FILENAME.zip -x  [OPTION ..] [FILE ..]
 zip2 -f FILENAME.rar -x  [OPTION ..] [FILE ..]
 ```
 
-## Specified Example:
-Backup files in dir ```srcDir```, which timestamp is within 2 days, into a new zip file.
-```
-dir2 srcDir -bsk --within 2hour | zip2 -cf ..\new.zip -T -
-```
-
-[Link to Feature Changes](https://github.com/ck-yung/zip2/blob/main/HISTORY.txt)
+[Link to Feature Changes](https://github.com/ck-yung/zip2/blob/main/History.txt)
 
 ## Credit:
 * SharpZipLib v1.4.1
