@@ -110,12 +110,19 @@ public class Create : ICommandMaker
             return false;
         }
 
+        ins.Close();
         var extThe = Path.GetExtension(My.ZipFilename).ToLower();
         if (extThe != ".zip")
         {
+            File.Delete(My.ZipFilename);
             throw new MyArgumentException(
                 $"Ext should be '.zip' but '{extThe}' is found!");
         }
+
+        string shadowName = My.ZipFilename +
+            $".{Guid.NewGuid()}.zip2.tmp";
+        File.Move(My.ZipFilename, shadowName);
+        ins = File.OpenWrite(shadowName);
 
         int cntAdded = 0;
         var buffer1 = new byte[32 * 1024];
@@ -191,7 +198,9 @@ public class Create : ICommandMaker
         outZs.Close();
         ins.Close();
         My.TotalText.Invoke($"Add OK:{cntAdded}");
-        if (1>cntAdded && File.Exists(My.ZipFilename))
+
+        File.Move(shadowName, My.ZipFilename);
+        if (1 > cntAdded && File.Exists(My.ZipFilename))
         {
             My.TotalText.Invoke($"Clean {My.ZipFilename}");
             File.Delete(My.ZipFilename);
