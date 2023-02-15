@@ -41,7 +41,6 @@
     <ToolCommandName>zip2</ToolCommandName>
     <PackageOutputPath>./nupkg</PackageOutputPath>
     <PackageReleaseNotes>@(ReleaseNoteLines, '%0a')</PackageReleaseNotes>
-    <PackageTags>zip</PackageTags>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Copyright>Copyright (c) 2021,2023 Yung, Chun Kau</Copyright>

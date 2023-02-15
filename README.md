@@ -23,7 +23,7 @@ Backup files in dir ```srcDir```, which timestamp is within 2 days, into a new z
 dir2 srcDir -bsk --within 2hour | zip2 -cf ..\new.zip -T -
 ```
 
-[Link to Major Changes](https://github.com/ck-yung/zip2/blob/main/RELEASE-NOTES.txt)
+[Link to Feature Changes](https://github.com/ck-yung/zip2/blob/main/HISTORY.txt)
 
 ## Credit:
 * SharpZipLib v1.4.1
