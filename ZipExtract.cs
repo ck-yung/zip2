@@ -28,16 +28,17 @@ static internal partial class My
                 };
             });
 
-    static internal readonly IInvokeOption<string, Stream> CreateExtractFile
-        = new NoValueOption<string, Stream>(
+    static internal readonly IInvokeOption<(string, string), Stream>
+        CreateExtractFile
+        = new NoValueOption<(string, string), Stream>(
             "--overwrite", shortcut: "-o",
-            init: (path) =>
+            init: (arg) =>
             {
-                if (File.Exists(path))
+                if (File.Exists(arg.Item1))
                     return Stream.Null;
-                return File.Create(path);
+                return File.Create(arg.Item2);
             },
-            alt: (path) => File.Create(path));
+            alt: (arg) => File.Create(arg.Item2));
 
     static internal readonly IInvokeOption<string, string> PathNameOpt
         = new NoValueOption<string, string>(
@@ -133,6 +134,8 @@ public class Extract : ICommandMaker
         var buffer2 = new byte[32 * 1024];
         var toOutDir = My.ToOutDir.Invoke(true);
 
+        var creationTime = DateTime.Now;
+        string tmpExt = $".{Guid.NewGuid()}.zip2.tmp";
         var count = My.FileFormatOpt.Invoke((ins, My.ZipFilename))
             .Where((it) => it.IsFile)
             .Where((it) => checkZipEntryName(it))
@@ -148,7 +151,9 @@ public class Extract : ICommandMaker
                 {
                     Directory.CreateDirectory(dirThe);
                 }
-                var outs = My.CreateExtractFile.Invoke(targetFilename);
+                var targetShadowName = targetFilename + tmpExt;
+                var outs = My.CreateExtractFile.Invoke(
+                    (targetFilename, targetShadowName));
                 if (outs == Stream.Null)
                 {
                     My.LogError.Invoke($"Skip existing {targetFilename}");
@@ -189,9 +194,11 @@ public class Extract : ICommandMaker
                 it.CloseStream(entryStream);
                 outs.Close();
 
-                if (File.Exists(targetFilename))
+                if (File.Exists(targetShadowName))
                 {
-                    File.SetLastWriteTime(targetFilename, it.DateTime);
+                    File.SetLastWriteTime(targetShadowName, it.DateTime);
+                    File.SetCreationTime(targetShadowName, creationTime);
+                    File.Move(targetShadowName, targetFilename);
                 }
                 return true;
             })
