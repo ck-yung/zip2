@@ -34,16 +34,29 @@ static internal partial class My
             "--overwrite", shortcut: "-o",
             init: (arg) =>
             {
-                if (File.Exists(arg.Item1))
-                    return Stream.Null;
+                if (File.Exists(arg.Item1)) return Stream.Null;
                 return File.Create(arg.Item2);
             },
-            alt: (arg) => File.Create(arg.Item2));
+            alt: (arg) =>
+            {
+                if (File.Exists(arg.Item1)) File.Delete(arg.Item1);
+                return File.Create(arg.Item2);
+            });
 
     static internal readonly IInvokeOption<string, string> PathNameOpt
         = new NoValueOption<string, string>(
             "--no-dir", init: (path) => path,
             alt: (path) => Path.GetFileName(path));
+
+    static internal readonly IInvokeOption<(string, DateTime, DateTime), bool>
+        UpdateLastWriteTimeOpt
+        = new NoValueOption<(string, DateTime, DateTime), bool>(
+            "--no-time", init: (arg) =>
+            {
+                File.SetLastWriteTime(arg.Item1, arg.Item2);
+                File.SetCreationTime(arg.Item1, arg.Item3);
+                return true;
+            }, alt: (arg) => { return false; });
 }
 
 [Command(name: "--extract", shortcut: "-x", help: """
@@ -63,6 +76,7 @@ public class Extract : ICommandMaker
         (IOption) My.LogError,
         (IOption) My.TotalText,
         (IOption) My.PathNameOpt,
+        (IOption) My.UpdateLastWriteTimeOpt,
         (IOption) My.ToOutDir,
         (IOption) My.CreateExtractFile,
         (IOption) My.ExclFiles,
@@ -196,8 +210,8 @@ public class Extract : ICommandMaker
 
                 if (File.Exists(targetShadowName))
                 {
-                    File.SetLastWriteTime(targetShadowName, it.DateTime);
-                    File.SetCreationTime(targetShadowName, creationTime);
+                    My.UpdateLastWriteTimeOpt.Invoke((targetShadowName,
+                        it.DateTime, creationTime));
                     File.Move(targetShadowName, targetFilename);
                 }
                 return true;

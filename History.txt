@@ -1,11 +1,12 @@
 HISTORY
 
 v2.0.2.2
-1. Add option "--format" to list and extract command.
-2. (Windows) Accept wild filename to '--file'.
+1. Accept wild filename to '--file'. (Windows OS)
 e.g. zip2 -tvf obj\backup*.zip
-3. Option '--show-crc' is added to List command.
+2. Add option "--format" to list and Extract command.
+3. Option "--show-crc" is added to List command.
 4. Shadow filenames are used to Create and Extract commands.
+5. Add option "--no-time" to Exract command.
 
 v2.0.2.1
 1. Support to list the content of a RAR file.
