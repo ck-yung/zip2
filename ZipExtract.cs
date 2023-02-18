@@ -1,7 +1,5 @@
-using ICSharpCode.SharpZipLib.Zip;
-using SharpCompress.Archives.Rar;
 using System.Collections.Immutable;
-using static zip2.Helper;
+using System.Runtime.InteropServices;
 
 namespace zip2;
 
@@ -48,15 +46,18 @@ static internal partial class My
             "--no-dir", init: (path) => path,
             alt: (path) => Path.GetFileName(path));
 
+    static internal Func<string, DateTime, DateTime, bool> SetFileTimes { get; set; } =
+        (path, lastWriteTime, creationTime) =>
+        {
+            File.SetLastWriteTime(path, lastWriteTime);
+            return true;
+        };
+
     static internal readonly IInvokeOption<(string, DateTime, DateTime), bool>
         UpdateLastWriteTimeOpt
-        = new NoValueOption<(string, DateTime, DateTime), bool>(
-            "--no-time", init: (arg) =>
-            {
-                File.SetLastWriteTime(arg.Item1, arg.Item2);
-                File.SetCreationTime(arg.Item1, arg.Item3);
-                return true;
-            }, alt: (arg) => { return false; });
+        = new NoValueOption<(string, DateTime, DateTime), bool>("--no-time",
+            init: (arg) => SetFileTimes(arg.Item1, arg.Item2, arg.Item3),
+            alt: (arg) => { return false; });
 }
 
 [Command(name: "--extract", shortcut: "-x", help: """
@@ -143,6 +144,17 @@ public class Extract : ICommandMaker
                 _ => (it) => namesFromFile.Contains(it.Name) ||
                 wildNames(Path.GetFileName(it.Name)),
             };
+
+        var rid = RuntimeInformation.RuntimeIdentifier.ToLower();
+        if (rid.StartsWith("win") || rid.StartsWith("osx"))
+        {
+            My.SetFileTimes = (path, lastWriteTime, creationTime) =>
+            {
+                File.SetLastWriteTime(path, lastWriteTime);
+                File.SetCreationTime(path, creationTime);
+                return true;
+            };
+        }
 
         var buffer1 = new byte[32 * 1024];
         var buffer2 = new byte[32 * 1024];
