@@ -46,18 +46,33 @@ static internal partial class My
             "--no-dir", init: (path) => path,
             alt: (path) => Path.GetFileName(path));
 
-    static internal Func<string, DateTime, DateTime, bool> SetFileTimes { get; set; } =
-        (path, lastWriteTime, creationTime) =>
+    internal record SetFileTimeParam(string Path,
+        DateTime LastWrite, DateTime Creation);
+
+    static internal Func<SetFileTimeParam, bool> InitSetLastWriteTime()
+    {
+        var rid = RuntimeInformation.RuntimeIdentifier.ToLower();
+        if (rid.StartsWith("win") || rid.StartsWith("osx"))
         {
-            File.SetLastWriteTime(path, lastWriteTime);
+            return (arg) =>
+            {
+                File.SetLastWriteTime(arg.Path, arg.LastWrite);
+                File.SetCreationTime(arg.Path, arg.Creation);
+                return true;
+            };
+        }
+        return (arg) =>
+        {
+            File.SetLastWriteTime(arg.Path, arg.LastWrite);
             return true;
         };
+    }
 
-    static internal readonly IInvokeOption<(string, DateTime, DateTime), bool>
+    static internal readonly IInvokeOption<SetFileTimeParam, bool>
         UpdateLastWriteTimeOpt
-        = new NoValueOption<(string, DateTime, DateTime), bool>("--no-time",
-            init: (arg) => SetFileTimes(arg.Item1, arg.Item2, arg.Item3),
-            alt: (arg) => { return false; });
+        = new NoValueOption<SetFileTimeParam, bool>("--no-time",
+            init: InitSetLastWriteTime(),
+            alt: (_) => { return false; });
 }
 
 [Command(name: "--extract", shortcut: "-x", help: """
@@ -145,17 +160,6 @@ public class Extract : ICommandMaker
                 wildNames(Path.GetFileName(it.Name)),
             };
 
-        var rid = RuntimeInformation.RuntimeIdentifier.ToLower();
-        if (rid.StartsWith("win") || rid.StartsWith("osx"))
-        {
-            My.SetFileTimes = (path, lastWriteTime, creationTime) =>
-            {
-                File.SetLastWriteTime(path, lastWriteTime);
-                File.SetCreationTime(path, creationTime);
-                return true;
-            };
-        }
-
         var buffer1 = new byte[32 * 1024];
         var buffer2 = new byte[32 * 1024];
         var toOutDir = My.ToOutDir.Invoke(true);
@@ -222,7 +226,8 @@ public class Extract : ICommandMaker
 
                 if (File.Exists(targetShadowName))
                 {
-                    My.UpdateLastWriteTimeOpt.Invoke((targetShadowName,
+                    My.UpdateLastWriteTimeOpt.Invoke(
+                        new My.SetFileTimeParam(targetShadowName,
                         it.DateTime, creationTime));
                     File.Move(targetShadowName, targetFilename);
                 }
