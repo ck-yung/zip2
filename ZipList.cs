@@ -141,7 +141,7 @@ static internal partial class My
 
     static internal readonly
         IInvokeOption<Non, Func<IEnumerable<MyZipEntry>, IEnumerable<MyZipEntry>>>
-        SelectStructure = new
+        SelectDirStructure = new
         NoValueOption<Non, Func<IEnumerable<MyZipEntry>, IEnumerable<MyZipEntry>>>(
             "--dir-only",
             init: (_) => (seq) => seq, alt: (_) =>
@@ -165,11 +165,11 @@ static internal partial class My
                     return Enumerable.Empty<MyZipEntry>();
                 }
 
-                var optThe = (IOption)TotalText;
+                var optThe = (IOption)TotalText!;
                 optThe.Resolve(optThe,
                     new string[] { optThe.Name });
 
-                optThe = (IOption)Verbose;
+                optThe = (IOption)Verbose!;
                 optThe.Resolve(optThe,
                     new string[] { optThe.Name });
 
@@ -177,7 +177,7 @@ static internal partial class My
             });
 
     static internal readonly IInvokeOption<(Stream, string), IEnumerable<MyZipEntry>>
-        FileFormatOpt = new
+        OpenCompressedFile = new
         SingleValueOption<(Stream, string), IEnumerable<MyZipEntry>>(
             "--format", help: "auto | zip | rar",
             init: (arg) => MyZipEntry.GetEntries(arg.Item1, arg.Item2),
@@ -239,9 +239,9 @@ public class List : ICommandMaker
         (IOption) My.Crc32Opt,
         (IOption) My.SortBy,
         (IOption) My.SumZip,
-        (IOption) My.SelectStructure,
+        (IOption) My.SelectDirStructure,
         (IOption) My.FilesFrom,
-        (IOption) My.FileFormatOpt,
+        (IOption) My.OpenCompressedFile,
     }.ToImmutableArray();
 
     static readonly ImmutableDictionary<string, string[]> MyShortcuts =
@@ -302,12 +302,12 @@ public class List : ICommandMaker
             return false;
         }
 
-        var sumThe = My.FileFormatOpt.Invoke((ins, My.ZipFilename))
+        var sumThe = My.OpenCompressedFile.Invoke((ins, My.ZipFilename))
             .Where((it) => checkZipEntryName(it))
             .Where((it) => false == My.ExclFiles.Invoke(
                 Path.GetFileName(it.Name)))
             .Where((it) => My.IsFileFound.Invoke(it.Name))
-            .Invoke(My.SelectStructure.Invoke(Non.e))
+            .Invoke(My.SelectDirStructure.Invoke(Non.e))
             .Invoke(My.SumZip.Invoke);
         ins.Close();
         My.TotalText.Invoke(sumThe.ToString());

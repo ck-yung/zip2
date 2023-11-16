@@ -1,3 +1,6 @@
+v2.1.0.0
+Update to .NET 8
+
 v2.0.2.2
 1. Accept wild filename to '--file'. (Windows OS)
 e.g. zip2 -tvf obj\backup*.zip

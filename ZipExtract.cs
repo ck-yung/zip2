@@ -97,7 +97,7 @@ public class Extract : ICommandMaker
         (IOption) My.CreateExtractFile,
         (IOption) My.ExclFiles,
         (IOption) My.FilesFrom,
-        (IOption) My.FileFormatOpt,
+        (IOption) My.OpenCompressedFile,
     }.ToImmutableArray();
 
     static readonly ImmutableDictionary<string, string[]> MyShortcuts =
@@ -166,7 +166,7 @@ public class Extract : ICommandMaker
 
         var creationTime = DateTime.Now;
         string tmpExt = $".{Guid.NewGuid()}.zip2.tmp";
-        var count = My.FileFormatOpt.Invoke((ins, My.ZipFilename))
+        var count = My.OpenCompressedFile.Invoke((ins, My.ZipFilename))
             .Where((it) => it.IsFile)
             .Where((it) => checkZipEntryName(it))
             .Where((it) => false == My.ExclFiles.Invoke(

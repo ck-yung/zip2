@@ -1,9 +1,10 @@
 # zip2
-**v2.0.2**
+**v2.1.0**
 
 ## Example:
 ```
-zip2 -xf ..\backup.zip -O restore-dir
+zip2 -xf ..\backup.zip -oO restore-dir
+zip2 -xf ..\backup2.rar -oO restore-dir2
 ```
 
 ## Specified Example:
@@ -26,8 +27,8 @@ zip2 -f FILENAME.rar -x  [OPTION ..] [FILE ..]
 [Link to Feature Changes](https://github.com/ck-yung/zip2/blob/main/History.txt)
 
 ## Credit:
-* SharpZipLib v1.4.1
-* SharpCompress v0.32.2
+* SharpZipLib v1.4.2
+* SharpCompress v0.34.2
 
 ### Remark:
 You can install ```dir2``` by ```dotnet tool install dir2 -g```
