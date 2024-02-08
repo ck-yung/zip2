@@ -43,10 +43,25 @@ class Program
         }
     }
 
+
     static public bool RunMain(string[] args)
     {
+        if (args.Length == 1 &&
+            File.Exists(args[0]) &&
+            new string[] { ".zip", ".rar"}
+            .Contains(Path.GetExtension(args[0]).ToLower()))
+        {
+            var a2 = ((IOption)My.OpenZip);
+            a2.Resolve(a2, [args[0]]);
+            var activator = new List();
+            var commandList = activator.Make();
+            commandList.Invoke([]);
+            return true;
+        }
+
         args = CommandMaker.Parse(args,
             out MyCommand commandThe);
+
         if (commandThe.IsFake())
         {
             Console.WriteLine(

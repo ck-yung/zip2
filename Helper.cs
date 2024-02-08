@@ -1,7 +1,6 @@
 using ICSharpCode.SharpZipLib.Zip;
 using SharpCompress.Archives.Rar;
 using System.Collections.Immutable;
-using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;

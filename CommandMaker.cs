@@ -65,62 +65,61 @@ internal partial class CommandMaker
             }
         }
 
-        IEnumerable<string> ParseInto(out MyCommand myCommand)
+        command = MyCommand.Fake;
+        var NamedCommands = Helper.MainCommandMakers.Value;
+
+        var aa = ExpandFromShortcut()
+            .GroupBy((it) => NamedCommands.ContainsKey(it))
+            .ToImmutableDictionary((grp) => grp.Key, (grp) => grp);
+        if (aa.TryGetValue(true, out var aa2))
         {
-            myCommand = MyCommand.Fake;
-            var NamedCommands = Helper.MainCommandMakers.Value;
-
-            var aa = ExpandFromShortcut()
-                .GroupBy((it) => NamedCommands.ContainsKey(it))
-                .ToImmutableDictionary((grp) => grp.Key, (grp) => grp);
-            if (aa.ContainsKey(true))
+            var bb = aa2.Distinct().Take(3).ToArray();
+            if (bb.Length == 2)
             {
-                var bb = aa[true].Distinct().Take(3).ToArray();
-                if (bb.Length == 2)
+                int cmdFound = -1;
+                if (bb[0] == HelpText) cmdFound = 1;
+                else if (bb[1] == HelpText) cmdFound = 0;
+                if (cmdFound > -1)
                 {
-                    int cmdFound = -1;
-                    if (bb[0] == HelpText) cmdFound = 1;
-                    else if (bb[1] == HelpText) cmdFound = 0;
-                    if (cmdFound > -1)
+                    if (Activator.CreateInstance(NamedCommands[bb[cmdFound]])
+                        is ICommandMaker b3)
                     {
-                        if (Activator.CreateInstance(NamedCommands[bb[cmdFound]])
-                            is ICommandMaker b3)
-                        {
-                            myCommand = b3.Make();
-                        }
-                        return new string[] { HelpText };
+                        command = b3.Make();
                     }
-                }
-
-                if (bb.Length > 1)
-                {
-                    throw new MyArgumentException(
-                        $"Too many commands ({bb[0]}, {bb[1]}) are found!");
-                }
-
-                if (bb.Length != 1)
-                {
-                    throw new MyArgumentException(
-                        $"Unhandled error [mark1] is found!");
-                }
-
-                if (Activator.CreateInstance(NamedCommands[bb[0]])
-                    is ICommandMaker b2)
-                {
-                    myCommand = b2.Make();
-                }
-                else
-                {
-                    throw new MyArgumentException(
-                        $"Unhandled error [mark2] is found!");
+                    return [HelpText];
                 }
             }
-            if (aa.ContainsKey(false)) return aa[false];
-            return Enumerable.Empty<string>();
+
+            if (bb.Length > 1)
+            {
+                throw new MyArgumentException(
+                    $"Too many commands ({bb[0]}, {bb[1]}) are found!");
+            }
+
+            if (bb.Length != 1)
+            {
+                throw new MyArgumentException(
+                    $"Unhandled error [mark1] is found!");
+            }
+
+            if (Activator.CreateInstance(NamedCommands[bb[0]])
+                is ICommandMaker b2)
+            {
+                command = b2.Make();
+            }
+            else
+            {
+                throw new MyArgumentException(
+                    $"Unhandled error [mark2] is found!");
+            }
         }
 
-        var rtn = ParseInto(out command);
-        return rtn.ToArray();
+        if (aa.TryGetValue(false, out var bb2))
+        {
+            var rtn= bb2.ToArray();
+            return rtn;
+        }
+        return [];
     }
 }
 
