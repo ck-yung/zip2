@@ -46,17 +46,14 @@ class Program
 
     static public bool RunMain(string[] args)
     {
-        if (args.Length == 1 &&
-            File.Exists(args[0]) &&
-            new string[] { ".zip", ".rar"}
-            .Contains(Path.GetExtension(args[0]).ToLower()))
+        if (args.Length == 1)
         {
-            var a2 = ((IOption)My.OpenZip);
-            a2.Resolve(a2, [args[0]]);
-            var activator = new List();
-            var commandList = activator.Make();
-            commandList.Invoke([]);
-            return true;
+            var argThe = args[0];
+            if (argThe.Length > 0 &&
+                argThe[0] != '-')
+            {
+                args = ["-tvf", argThe];
+            }
         }
 
         args = CommandMaker.Parse(args,
