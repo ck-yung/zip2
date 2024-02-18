@@ -5,40 +5,62 @@ namespace zip2;
 
 static internal partial class My
 {
+    static internal readonly string PrefixOutputConsole =
+        System.Text.Encoding.UTF8.GetString(new byte[] { 0, 1 });
+
+    internal record CreateFilenames(string Real, string Shadow);
+    internal record CreateResult(Stream Stream, Action<Stream> Close);
+
+    static internal readonly IInvokeOption<CreateFilenames, CreateResult>
+        CreateExtractFile
+        = new NoValueOption<CreateFilenames, CreateResult>(
+            "--overwrite", shortcut: "-o",
+            init: (arg) =>
+            {
+                if (File.Exists(arg.Real))
+                    return new CreateResult(Stream.Null, (_) => { });
+                return new CreateResult(
+                    Stream: File.Create(arg.Shadow), Close: (s) => s.Close());
+            },
+            alt: (arg) =>
+            {
+                if (File.Exists(arg.Real)) File.Delete(arg.Real);
+                return new CreateResult(
+                    Stream: File.Create(arg.Shadow), Close: (s) => s.Close());
+            });
+
     static internal readonly IInvokeOption<bool, Func<string, string>> ToOutDir
         = new SingleValueOption<bool, Func<string, string>>(
-            "--out-dir", help: "OUTPUT-DIR", shortcut: "-O",
+            "--out-dir", help: "OUTPUT-DIR (- to ZIP-FILENAME, = to console)",
+            shortcut: "-O",
             init: (_) => (it) => it,
             resolve: (the, arg) =>
             {
                 if (string.IsNullOrEmpty(arg)) return null;
-                return (_) =>
-                {
-                    if (arg == "-")
-                    {
-                        arg = Path.GetFileNameWithoutExtension(
-                            ZipFilename) ?? string.Empty;
-                        if (string.IsNullOrEmpty(arg))
-                            throw new MyArgumentException("But --file is NOT set!");
-                        return (path) => Path.Combine(arg, path);
-                    }
-                    return (path) => Path.Combine(arg, path);
-                };
-            });
 
-    static internal readonly IInvokeOption<(string, string), Stream>
-        CreateExtractFile
-        = new NoValueOption<(string, string), Stream>(
-            "--overwrite", shortcut: "-o",
-            init: (arg) =>
-            {
-                if (File.Exists(arg.Item1)) return Stream.Null;
-                return File.Create(arg.Item2);
-            },
-            alt: (arg) =>
-            {
-                if (File.Exists(arg.Item1)) File.Delete(arg.Item1);
-                return File.Create(arg.Item2);
+                if (arg == "-")
+                {
+                    arg = Path.GetFileNameWithoutExtension(
+                        ZipFilename) ?? string.Empty;
+                    if (string.IsNullOrEmpty(arg))
+                        throw new MyArgumentException("But --file is NOT set!");
+                    return (_) => (path) => Path.Combine(arg, path);
+                }
+
+                if (arg == "=")
+                {
+                    Console.OutputEncoding = System.Text.Encoding.UTF8;
+                    ((NoValueOption<CreateFilenames, CreateResult>)CreateExtractFile)
+                    .ChangeImp(alt: name =>
+                    {
+                        Console.Error.WriteLine();
+                        Console.Error.WriteLine(name.Real);
+                        return new CreateResult(Console.OpenStandardOutput(), (_) => { });
+                    });
+                    return (_) => (path) => path;
+                }
+
+                return (_) => (path) => Path.Combine(arg, path);
             });
 
     static internal readonly IInvokeOption<string, string> PathNameOpt
@@ -93,8 +115,8 @@ public class Extract : ICommandMaker
         (IOption) My.TotalText,
         (IOption) My.PathNameOpt,
         (IOption) My.UpdateLastWriteTimeOpt,
-        (IOption) My.ToOutDir,
         (IOption) My.CreateExtractFile,
+        (IOption) My.ToOutDir,
         (IOption) My.ExclFiles,
         (IOption) My.FilesFrom,
         (IOption) My.OpenCompressedFile,
@@ -182,8 +204,9 @@ public class Extract : ICommandMaker
                     Directory.CreateDirectory(dirThe);
                 }
                 var targetShadowName = targetFilename + tmpExt;
-                var outs = My.CreateExtractFile.Invoke(
-                    (targetFilename, targetShadowName));
+                (var outs , var theClose) = My.CreateExtractFile.Invoke(
+                    new My.CreateFilenames(Real: targetFilename,
+                    Shadow: targetShadowName));
                 if (outs == Stream.Null)
                 {
                     My.LogError.Invoke($"Skip existing {targetFilename}");
@@ -192,7 +215,7 @@ public class Extract : ICommandMaker
                 My.Verbose.Invoke(targetFilename);
                 if (1 > it.Size)
                 {
-                    outs.Close();
+                    theClose(outs);
                     return true;
                 }
 
@@ -222,7 +245,7 @@ public class Extract : ICommandMaker
                     }
                 }
                 it.CloseStream(entryStream);
-                outs.Close();
+                theClose(outs);
 
                 if (File.Exists(targetShadowName))
                 {

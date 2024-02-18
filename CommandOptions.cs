@@ -152,6 +152,11 @@ static internal partial class My
             };
         }
 
+        internal void ChangeImp(Func<T,R> alt)
+        {
+            InvokeImp = alt;
+        }
+
         public Action<IOption, IEnumerable<string>> Resolve { get; init; }
 
         public IEnumerable<(bool, string)> Parse(
