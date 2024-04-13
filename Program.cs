@@ -21,6 +21,15 @@ class Program
         {
             Console.WriteLine(ae.Message);
         }
+        catch (SharpCompress.Common.MultiVolumeExtractionException)
+        {
+            IOption opt = (IOption)My.GetRarEntries;
+            Console.WriteLine($"Option {opt.Name} (shortcut '{opt.Shortcut}') is required!");
+        }
+        catch (SharpCompress.Common.IncompleteArchiveException)
+        {
+            Console.WriteLine($"IncompleteArchive! '{My.LastRarArchivePath}' is NOT found!");
+        }
         catch (Exception ee)
         {
             if (Helper.GetExeEnvr().Contains(":dump-stack:"))

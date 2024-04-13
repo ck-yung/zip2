@@ -247,6 +247,7 @@ public class List : ICommandMaker
         (IOption) My.SelectDirStructure,
         (IOption) My.FilesFrom,
         (IOption) My.OpenCompressedFile,
+        (IOption) My.GetRarEntries,
     }.ToImmutableArray();
 
     static readonly ImmutableDictionary<string, string[]> MyShortcuts =

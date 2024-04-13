@@ -1,6 +1,5 @@
 using ICSharpCode.SharpZipLib.Zip;
 using SharpCompress.Archives.Rar;
-using SharpCompress.Readers;
 using System.Collections.Immutable;
 using System.Reflection;
 using System.Text;
@@ -124,12 +123,13 @@ static class Helper
     {
         string ToRegexText(string text)
         {
-            var regText = new System.Text.StringBuilder("^");
+            var regText = new StringBuilder("^");
             regText.Append(text
                 .Replace(@"\", @"\\")
                 .Replace("^", @"\^")
                 .Replace("$", @"\$")
                 .Replace(".", @"\.")
+                .Replace("+", @"\+")
                 .Replace("?", ".")
                 .Replace("*", ".*")
                 .Replace("(", @"\(")
@@ -193,8 +193,9 @@ static class Helper
 
 internal class MyZipEntry
 {
-    static IEnumerable<MyZipEntry> GetEntries(IReader reader)
+    static internal IEnumerable<MyZipEntry> GetSharpCompressEntries(Stream stream)
     {
+        var reader = SharpCompress.Readers.ReaderFactory.Open(stream);
         while (reader.MoveToNextEntry())
         {
             SharpCompress.Common.IEntry entryThe = reader.Entry;
@@ -203,16 +204,13 @@ internal class MyZipEntry
         }
     }
 
-    static public IEnumerable<MyZipEntry> GetEntries(Stream ins, string filename)
+    static public IEnumerable<MyZipEntry> GetEntries(Stream stream, string path)
     {
-        var extThe = Path.GetExtension(My.ZipFilename).ToLower();
+        var extThe = Path.GetExtension(path).ToLower();
         return (extThe) switch
         {
-            ".zip" => new ZipInputStream(ins).MyZipEntries(),
-            ".rar" => GetEntries(ReaderFactory.Open(ins)),
-            //RarArchive.Open(ins, new SharpCompress.Readers
-            //.ReaderOptions()
-            //{ LeaveStreamOpen = true }).MyRarEntries(),
+            ".zip" => new ZipInputStream(stream).MyZipEntries(),
+            ".rar" => My.GetRarEntries.Invoke(new My.GetRarEntriesParam(stream, path)),
             _ => throw new MyArgumentException(
                 $"'{extThe}' is unknown extension"),
         };

@@ -1,3 +1,4 @@
+using SharpCompress.Archives.Rar;
 using static zip2.Helper;
 
 namespace zip2;
@@ -148,4 +149,34 @@ static internal partial class My
                 return Non.e;
             },
             alt: (msg) => Non.e);
+
+    static internal string LastRarArchivePath { set; get; } = "?";
+    internal record GetRarEntriesParam(Stream Stream, string Path);
+    static internal IInvokeOption<GetRarEntriesParam, IEnumerable<MyZipEntry>> GetRarEntries
+        = new NoValueOption<GetRarEntriesParam, IEnumerable<MyZipEntry>>(
+            "--multi-vol", shortcut: "-m",
+            init: (arg) => MyZipEntry.GetSharpCompressEntries(arg.Stream),
+            alt: (arg) =>
+            {
+                int ndx = 1;
+                IEnumerable<Stream> GetInputStream(Stream first)
+                {
+                    yield return first;
+                    while (true)
+                    {
+                        ndx += 1;
+                        LastRarArchivePath = arg.Path.Replace("part1", $"part{ndx}");
+                        if (LastRarArchivePath.Equals(arg.Path))
+                            throw new MyArgumentException(
+                                $"'{arg.Path}' does NOT contains 'part1' !");
+
+                        if (false == File.Exists(LastRarArchivePath)) yield break;
+                        //Console.WriteLine($"dbg: OPEN '{LastRarArchivePath}'");
+                        yield return File.OpenRead(LastRarArchivePath);
+                    }
+                }
+                return RarArchive.Open(GetInputStream(arg.Stream))
+                .Entries.Where((it) => false == it.IsDirectory)
+                .Select((it) => new MyZipEntry(it));
+            });
 }

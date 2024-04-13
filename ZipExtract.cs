@@ -120,6 +120,7 @@ public class Extract : ICommandMaker
         (IOption) My.ExclFiles,
         (IOption) My.FilesFrom,
         (IOption) My.OpenCompressedFile,
+        (IOption) My.GetRarEntries,
     }.ToImmutableArray();
 
     static readonly ImmutableDictionary<string, string[]> MyShortcuts =
