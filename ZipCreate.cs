@@ -103,7 +103,7 @@ public class Create : ICommandMaker
             return false;
         }
 
-        var ins = My.OpenZip.Invoke((false, "'zip2 -c?' for help"));
+        var ins = My.OpenZip.Invoke(new My.OpenZipParam("'zip2 -c?' for help", IsExisted: false));
         if (ins == Stream.Null)
         {
             Console.WriteLine("Create failed.");

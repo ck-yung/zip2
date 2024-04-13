@@ -5,13 +5,15 @@ internal interface ICommandMaker
     MyCommand Make();
 }
 
+public record FlagedArg(bool Selected, string Arg);
+
 public interface IOption
 {
     string Name { get; }
     string Shortcut { get; }
     string Help { get; }
-    IEnumerable<(bool, string)> Parse(
-        IEnumerable<(bool, string)> args);
+    IEnumerable<FlagedArg> Parse(
+        IEnumerable<FlagedArg> args);
     Action<IOption, IEnumerable<string>> Resolve { get; }
 }
 

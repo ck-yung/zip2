@@ -156,7 +156,7 @@ public class Extract : ICommandMaker
             return false;
         }
 
-        var ins = My.OpenZip.Invoke((true, "'zip2 -x?' for help"));
+        var ins = My.OpenZip.Invoke(new My.OpenZipParam("'zip2 -x?' for help"));
         if (ins == Stream.Null)
         {
             Console.WriteLine("Open failed.");
@@ -188,7 +188,7 @@ public class Extract : ICommandMaker
 
         var creationTime = DateTime.Now;
         string tmpExt = $".{Guid.NewGuid()}.zip2.tmp";
-        var count = My.OpenCompressedFile.Invoke((ins, My.ZipFilename))
+        var count = My.OpenCompressedFile.Invoke(new My.OpenParam(ins, My.ZipFilename))
             .Where((it) => it.IsFile)
             .Where((it) => checkZipEntryName(it))
             .Where((it) => false == My.ExclFiles.Invoke(

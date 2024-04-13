@@ -1,5 +1,6 @@
 using ICSharpCode.SharpZipLib.Zip;
 using SharpCompress.Archives.Rar;
+using SharpCompress.Readers;
 using System.Collections.Immutable;
 using System.Reflection;
 using System.Text;
@@ -192,15 +193,26 @@ static class Helper
 
 internal class MyZipEntry
 {
+    static IEnumerable<MyZipEntry> GetEntries(IReader reader)
+    {
+        while (reader.MoveToNextEntry())
+        {
+            SharpCompress.Common.IEntry entryThe = reader.Entry;
+            if (entryThe.IsDirectory) continue;
+            yield return new MyZipEntry(reader.Entry);
+        }
+    }
+
     static public IEnumerable<MyZipEntry> GetEntries(Stream ins, string filename)
     {
         var extThe = Path.GetExtension(My.ZipFilename).ToLower();
         return (extThe) switch
         {
             ".zip" => new ZipInputStream(ins).MyZipEntries(),
-            ".rar" => RarArchive.Open(ins, new SharpCompress.Readers
-            .ReaderOptions()
-            { LeaveStreamOpen = true }).MyRarEntries(),
+            ".rar" => GetEntries(ReaderFactory.Open(ins)),
+            //RarArchive.Open(ins, new SharpCompress.Readers
+            //.ReaderOptions()
+            //{ LeaveStreamOpen = true }).MyRarEntries(),
             _ => throw new MyArgumentException(
                 $"'{extThe}' is unknown extension"),
         };
@@ -253,6 +265,21 @@ internal class MyZipEntry
         Crc = arg.Crc;
         OpenStream = arg.OpenEntryStream;
         CloseStream = (it) => it.Close();
+    }
+
+    public MyZipEntry(SharpCompress.Common.IEntry arg)
+    {
+        Name = arg.Key;
+        IsCrypted = arg.IsEncrypted;
+        IsFile = false == arg.IsDirectory;
+        Size = arg.Size;
+        CompressedSize = arg.CompressedSize;
+        DateTime = arg.LastModifiedTime ?? DateTime.MinValue;
+        Crc = arg.Crc;
+        //public Func<Stream> OpenStream { get; init; }
+        //public Action<Stream> CloseStream { get; init; }
+        OpenStream = () => Stream.Null;
+        CloseStream = (_) => { };
     }
 }
 

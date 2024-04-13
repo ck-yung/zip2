@@ -6,19 +6,20 @@ static internal partial class My
 {
     static internal string ZipFilename { get; private set; } = "";
 
-    static internal IInvokeOption<(bool,string), Stream> OpenZip
-        = new SingleValueOption<(bool, string), Stream>(
+    internal record OpenZipParam(string ErrorMessage, bool IsExisted = true);
+    static internal IInvokeOption<OpenZipParam, Stream> OpenZip
+        = new SingleValueOption<OpenZipParam, Stream>(
             "--file", help: "ZIP-FILENAME", shortcut: "-f",
             init: (it) => throw new MyArgumentException(
                 "Zip file is required by '--file' or '-f'." +
-                Environment.NewLine + it.Item2),
+                Environment.NewLine + it.ErrorMessage),
             resolve: (the, arg) =>
             {
                 if (string.IsNullOrEmpty(arg)) return null;
                 return (it) =>
                 {
                     ZipFilename = arg;
-                    if (it.Item1)
+                    if (it.IsExisted)
                     {
                         if (false == File.Exists(ZipFilename))
                         {

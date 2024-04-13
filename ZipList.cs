@@ -116,13 +116,17 @@ static internal partial class My
                             func: (acc, it) => acc.AddWith(it));
                     case "ext":
                         return (seq) => seq
-                        .Select((it) => (Path.GetExtension(it.Name), it))
-                        .GroupBy((pair) => string.IsNullOrEmpty(pair.Item1)
-                        ? "*no-ext*" : pair.Item1)
+                        .Select((it) => new
+                        {
+                            FileExt = Path.GetExtension(it.Name),
+                            Entry = it,
+                        })
+                        .GroupBy((it) => string.IsNullOrEmpty(it.FileExt)
+                        ? "*no-ext*" : it.FileExt)
                         .ToImmutableDictionary((grp) => grp.Key,
                         (grp) => grp.Aggregate(
                             seed: new SumZipEntry(grp.Key),
-                            func: (acc, it) => acc.AddWith(it.Item2)))
+                            func: (acc, it) => acc.AddWith(it.Entry)))
                         .Select((pair) => pair.Value)
                         .Invoke(SortSumEntry)
                         .Select((it) =>
@@ -176,16 +180,17 @@ static internal partial class My
                 return (seq) => GetDir(seq);
             });
 
-    static internal readonly IInvokeOption<(Stream, string), IEnumerable<MyZipEntry>>
+    internal record OpenParam(Stream Stream, string Path);
+    static internal readonly IInvokeOption<OpenParam, IEnumerable<MyZipEntry>>
         OpenCompressedFile = new
-        SingleValueOption<(Stream, string), IEnumerable<MyZipEntry>>(
+        SingleValueOption<OpenParam, IEnumerable<MyZipEntry>>(
             "--format", help: "auto | zip | rar",
-            init: (arg) => MyZipEntry.GetEntries(arg.Item1, arg.Item2),
+            init: (arg) => MyZipEntry.GetEntries(arg.Stream, arg.Path),
             resolve: (the, arg) => (arg) switch
             {
-                "auto" => (it) => MyZipEntry.GetEntries(it.Item1, it.Item2),
-                "zip" => (it) => new ZipInputStream(it.Item1).MyZipEntries(),
-                "rar" => (it) => RarArchive.Open(it.Item1,
+                "auto" => (it) => MyZipEntry.GetEntries(it.Stream, it.Path),
+                "zip" => (it) => new ZipInputStream(it.Stream).MyZipEntries(),
+                "rar" => (it) => RarArchive.Open(it.Stream,
                     new SharpCompress.Readers.ReaderOptions()
                     { LeaveStreamOpen = true }).MyRarEntries(),
                 _ => throw new MyArgumentException(
@@ -295,14 +300,14 @@ public class List : ICommandMaker
                 wildNames(Path.GetFileName(it.Name)),
             };
 
-        var ins = My.OpenZip.Invoke((true, "'zip2 -t?' for help"));
+        var ins = My.OpenZip.Invoke(new My.OpenZipParam("'zip2 -t?' for help"));
         if (ins == Stream.Null)
         {
             Console.Error.WriteLine($"Open {My.ZipFilename} failed.");
             return false;
         }
 
-        var sumThe = My.OpenCompressedFile.Invoke((ins, My.ZipFilename))
+        var sumThe = My.OpenCompressedFile.Invoke(new My.OpenParam(ins, My.ZipFilename))
             .Where((it) => checkZipEntryName(it))
             .Where((it) => false == My.ExclFiles.Invoke(
                 Path.GetFileName(it.Name)))

@@ -72,8 +72,9 @@ class Program
 
         args = commandThe.Parse(args
             .AsEnumerable()
-            .Select((it) => (false, it)))
-            .Select((it) => (it.Item2))
+            .Select((it) => new FlagedArg(false, it))
+            )
+            .Select((it) => it.Arg)
             .ToArray();
         return commandThe.Invoke(args);
     }

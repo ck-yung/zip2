@@ -134,28 +134,28 @@ public class MyCommand
     readonly ImmutableDictionary<string, string[]> ShortcutArrays;
     public ImmutableArray<IOption> Options { get; init; }
 
-    public IEnumerable<(bool, string)> Parse(IEnumerable<(bool, string)> mainArgs)
+    public IEnumerable<FlagedArg> Parse(IEnumerable<FlagedArg> mainArgs)
     {
         var shortcuts = Options
             .Where((it) => it.Shortcut.Length > 0)
             .ToImmutableDictionary((it) => it.Shortcut, (it) => it.Name);
-        IEnumerable<(bool, string)> ExpandShortcuts()
+        IEnumerable<FlagedArg> ExpandShortcuts()
         {
             var it = mainArgs.GetEnumerator();
             while (it.MoveNext())
             {
                 var current = it.Current;
-                if (shortcuts.TryGetValue(current.Item2,
+                if (shortcuts.TryGetValue(current.Arg,
                     out string? value))
                 {
-                    yield return (current.Item1, value);
+                    yield return new FlagedArg(current.Selected, value);
                 }
-                else if (ShortcutArrays.TryGetValue(current.Item2,
+                else if (ShortcutArrays.TryGetValue(current.Arg,
                     out string[]? values))
                 {
                     foreach (var value2 in values)
                     {
-                        yield return (current.Item1, value2);
+                        yield return new FlagedArg(current.Selected, value2);
                     }
                 }
                 else
@@ -169,13 +169,13 @@ public class MyCommand
         foreach (var opt in Options)
         {
             var mapThe = opt.Parse(args)
-                .GroupBy((it) => it.Item1)
+                .GroupBy((it) => it.Selected)
                 .ToImmutableDictionary((grp) => grp.Key, (grp) => grp);
 
             if (mapThe.ContainsKey(true))
             {
                 opt.Resolve(opt, mapThe[true]
-                    .Select((it) => it.Item2)
+                    .Select((it) => it.Arg)
                     .Where((it) => it.Length > 0)
                     .Distinct());
             }
@@ -186,7 +186,7 @@ public class MyCommand
             }
             else
             {
-                return Array.Empty<(bool, string)>();
+                return Array.Empty<FlagedArg>();
             }
         }
         return args;

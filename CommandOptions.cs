@@ -34,18 +34,18 @@ static internal partial class My
 
         public Action<IOption, IEnumerable<string>> Resolve { get; init; }
 
-        public IEnumerable<(bool, string)> Parse(
-            IEnumerable<(bool, string)> args)
+        public IEnumerable<FlagedArg> Parse(
+            IEnumerable<FlagedArg> args)
         {
             var it = args.GetEnumerator();
             while (it.MoveNext())
             {
                 var current = it.Current;
-                if (current.Item2 == Name)
+                if (current.Arg == Name)
                 {
                     if (it.MoveNext())
                     {
-                        yield return (true, it.Current.Item2);
+                        yield return new FlagedArg(true, it.Current.Arg);
                     }
                     else
                     {
@@ -97,18 +97,18 @@ static internal partial class My
 
         public Action<IOption, IEnumerable<string>> Resolve { get; init; }
 
-        public IEnumerable<(bool, string)> Parse(
-            IEnumerable<(bool, string)> args)
+        public IEnumerable<FlagedArg> Parse(
+            IEnumerable<FlagedArg> args)
         {
             var it = args.GetEnumerator();
             while (it.MoveNext())
             {
                 var current = it.Current;
-                if (current.Item2 == Name)
+                if (current.Arg == Name)
                 {
                     if (it.MoveNext())
                     {
-                        yield return (true, it.Current.Item2);
+                        yield return new FlagedArg(true, it.Current.Arg);
                     }
                     else
                     {
@@ -159,16 +159,16 @@ static internal partial class My
 
         public Action<IOption, IEnumerable<string>> Resolve { get; init; }
 
-        public IEnumerable<(bool, string)> Parse(
-            IEnumerable<(bool, string)> args)
+        public IEnumerable<FlagedArg> Parse(
+            IEnumerable<FlagedArg> args)
         {
             var it = args.GetEnumerator();
             while (it.MoveNext())
             {
                 var current = it.Current;
-                if (current.Item2 == Name)
+                if (current.Arg == Name)
                 {
-                    yield return (true, Name);
+                    yield return new FlagedArg(true, Name);
                 }
                 else
                 {
