@@ -205,17 +205,6 @@ static class Helper
 
 internal class MyZipEntry
 {
-    static internal IEnumerable<MyZipEntry> GetSharpCompressEntries(Stream stream)
-    {
-        var reader = SharpCompress.Readers.ReaderFactory.Open(stream);
-        while (reader.MoveToNextEntry())
-        {
-            SharpCompress.Common.IEntry entryThe = reader.Entry;
-            if (entryThe.IsDirectory) continue;
-            yield return new MyZipEntry(reader.Entry);
-        }
-    }
-
     static public IEnumerable<MyZipEntry> GetEntries(Stream stream, string path)
     {
         var extThe = Path.GetExtension(path).ToLower();
@@ -237,19 +226,6 @@ internal class MyZipEntry
     public long Crc { get; init; }
     public Func<Stream> OpenStream { get; init; }
     public Action<Stream> CloseStream { get; init; }
-    public MyZipEntry(string name, bool isCrypted, bool isFile,
-        long size, long compressedSize, DateTime dateTime, long crc)
-    {
-        Name = name;
-        IsCrypted = isCrypted;
-        IsFile = isFile;
-        Size = size;
-        CompressedSize = compressedSize;
-        DateTime = dateTime;
-        Crc = crc;
-        OpenStream = () => Stream.Null;
-        CloseStream = (_) => { };
-    }
 
     public MyZipEntry(ZipEntry arg, ZipInputStream stream)
     {
@@ -275,21 +251,6 @@ internal class MyZipEntry
         Crc = arg.Crc;
         OpenStream = arg.OpenEntryStream;
         CloseStream = (it) => it.Close();
-    }
-
-    public MyZipEntry(SharpCompress.Common.IEntry arg)
-    {
-        Name = arg.Key;
-        IsCrypted = arg.IsEncrypted;
-        IsFile = false == arg.IsDirectory;
-        Size = arg.Size;
-        CompressedSize = arg.CompressedSize;
-        DateTime = arg.LastModifiedTime ?? DateTime.MinValue;
-        Crc = arg.Crc;
-        //public Func<Stream> OpenStream { get; init; }
-        //public Action<Stream> CloseStream { get; init; }
-        OpenStream = () => Stream.Null;
-        CloseStream = (_) => { };
     }
 }
 

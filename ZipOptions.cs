@@ -171,11 +171,14 @@ static internal partial class My
     static internal IInvokeOption<GetRarEntriesParam, IEnumerable<MyZipEntry>> GetRarEntries
         = new NoValueOption<GetRarEntriesParam, IEnumerable<MyZipEntry>>(
             "--multi-vol", shortcut: "-m",
-            init: (arg) => MyZipEntry.GetSharpCompressEntries(arg.Stream),
+            init: (arg) => RarArchive.Open(arg.Stream)
+            .Entries
+            .Where((it) => false == it.IsDirectory)
+            .Select((it) => new MyZipEntry(it)),
             alt: (arg) =>
             {
                 int ndx = 1;
-                IEnumerable<Stream> GetInputStream(Stream first)
+                IEnumerable<Stream> GetInputStreams(Stream first)
                 {
                     yield return first;
                     while (true)
@@ -190,7 +193,7 @@ static internal partial class My
                         yield return File.OpenRead(LastRarArchivePath);
                     }
                 }
-                return RarArchive.Open(GetInputStream(arg.Stream))
+                return RarArchive.Open(GetInputStreams(arg.Stream))
                 .Entries.Where((it) => false == it.IsDirectory)
                 .Select((it) => new MyZipEntry(it));
             });
