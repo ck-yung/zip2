@@ -68,14 +68,15 @@ static internal partial class My
             init: (it) =>
             {
                 if (it.Args.Length == 0)
-                    throw new ArgumentException($"Syntax: {nameof(zip2)} -?");
+                    throw new MyArgumentException($"Syntax: {nameof(zip2)} -?");
                 ZipFilename = it.Args[0];
                 return GetOpenZip(ZipFilename, it.Args.Skip(1), it.IsExisted);
             },
             resolve: (the, arg) =>
             {
                 if (string.IsNullOrEmpty(arg) || arg.Length == 0)
-                    throw new ArgumentException($"Filename is required to '{the.Name}','{the.Shortcut}'");
+                    throw new MyArgumentException(
+                        $"Filename is required to '{the.Name}','{the.Shortcut}'");
                 return (it) =>
                 {
                     ZipFilename = arg;
@@ -170,7 +171,7 @@ static internal partial class My
     internal record GetRarEntriesParam(Stream Stream, string Path);
     static internal IInvokeOption<GetRarEntriesParam, IEnumerable<MyZipEntry>> GetRarEntries
         = new NoValueOption<GetRarEntriesParam, IEnumerable<MyZipEntry>>(
-            "--multi-vol", shortcut: "-m",
+            "--multi-vol", shortcut: "-m", help: "\t rar only",
             init: (arg) => RarArchive.Open(arg.Stream)
             .Entries
             .Where((it) => false == it.IsDirectory)
@@ -184,10 +185,12 @@ static internal partial class My
                     while (true)
                     {
                         ndx += 1;
-                        LastRarArchivePath = arg.Path.Replace("part1", $"part{ndx}");
+                        LastRarArchivePath = arg.Path
+                        .Replace("part1", $"part{ndx}")
+                        .Replace("part01", "part"+ ndx.ToString("00"));
                         if (LastRarArchivePath.Equals(arg.Path))
                             throw new MyArgumentException(
-                                $"'{arg.Path}' does NOT contains 'part1' !");
+                                $"'{arg.Path}' does NOT contains 'part1' or 'part01' !");
 
                         if (false == File.Exists(LastRarArchivePath)) yield break;
                         yield return File.OpenRead(LastRarArchivePath);
