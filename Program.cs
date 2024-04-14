@@ -28,7 +28,15 @@ class Program
         }
         catch (SharpCompress.Common.IncompleteArchiveException)
         {
-            Console.WriteLine($"IncompleteArchive! '{My.LastRarArchivePath}' is NOT found!");
+            if (My.LastRarArchivePath == "?")
+            {
+                IOption opt = (IOption)My.GetRarEntries;
+                Console.WriteLine($"Option {opt.Name} (shortcut '{opt.Shortcut}') is required!");
+            }
+            else
+            {
+                Console.WriteLine($"Archive file '{My.LastRarArchivePath}' is NOT found!");
+            }
         }
         catch (Exception ee)
         {
