@@ -16,6 +16,12 @@ public class CommandAttribute : Attribute
     }
 }
 
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+public class DefaultCommandAttribute: Attribute
+{
+
+}
+
 public class MyArgumentException: Exception
 {
     public MyArgumentException(string message):

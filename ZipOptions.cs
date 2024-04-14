@@ -171,7 +171,6 @@ static internal partial class My
                                 $"'{arg.Path}' does NOT contains 'part1' !");
 
                         if (false == File.Exists(LastRarArchivePath)) yield break;
-                        //Console.WriteLine($"dbg: OPEN '{LastRarArchivePath}'");
                         yield return File.OpenRead(LastRarArchivePath);
                     }
                 }

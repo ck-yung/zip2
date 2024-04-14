@@ -80,6 +80,18 @@ static class Helper
         .Where((it) => it.Item1.Name.Length > 0)
         .ToImmutableDictionary((it) => it.Item1.Name, (it2) => it2.Item2));
 
+    static public IEnumerable<(DefaultCommandAttribute, Type)> GetDefaultCommands()
+    {
+        return Assembly.GetExecutingAssembly()
+            .GetTypes()
+            .AsEnumerable()
+            .Select((it) => (it.GetCustomAttributes(
+                typeof(DefaultCommandAttribute), inherit: false), it))
+            .Where((it) => it.Item1.Length > 0)
+            .Select((it) => (it.Item1.Cast<DefaultCommandAttribute>().First(), it.Item2))
+            .Take(1);
+    }
+
     internal static void PrintHelp(ImmutableArray<IOption> opts)
     {
         PrintHelp(opts, MyCommand.EmptyShortcutArrays);

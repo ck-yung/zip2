@@ -117,6 +117,17 @@ internal partial class CommandMaker
         if (aa.TryGetValue(false, out var bb2))
         {
             var rtn= bb2.ToArray();
+            if (MyCommand.Fake == command)
+            {
+                var cc = Helper.GetDefaultCommands().ToArray();
+                if (cc.Length > 0)
+                {
+                    if (Activator.CreateInstance(cc[0].Item2) is ICommandMaker b3)
+                    {
+                        command = b3.Make();
+                    }
+               }
+            }
             return rtn;
         }
         return [];

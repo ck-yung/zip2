@@ -222,6 +222,7 @@ static internal partial class My
         alt: (it) => (it == null) ? "         " : $"{it.Crc:x8} ");
 }
 
+[DefaultCommand]
 [Command(name: "--list", shortcut: "-t", help: """
       zip2 -tf ZIP-FILE [OPTION ..] [WILD ..]
     """)]
