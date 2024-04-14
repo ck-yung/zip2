@@ -157,7 +157,7 @@ public class Extract : ICommandMaker
             return false;
         }
 
-        var ins = My.OpenZip.Invoke(new My.OpenZipParam("'zip2 -x?' for help"));
+        (args, var ins) = My.OpenZip.Invoke(new My.OpenZipParam(args));
         if (ins == Stream.Null)
         {
             Console.WriteLine("Open failed.");

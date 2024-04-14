@@ -283,6 +283,13 @@ public class List : ICommandMaker
             return false;
         }
 
+        (args, var ins) = My.OpenZip.Invoke(new My.OpenZipParam(args));
+        if (ins == Stream.Null)
+        {
+            Console.Error.WriteLine($"Open {My.ZipFilename} failed.");
+            return false;
+        }
+
         var wildNames = Helper.ToWildPredicate(args);
 
         var namesFromFile = My.FilesFrom.Invoke(true)
@@ -301,13 +308,6 @@ public class List : ICommandMaker
                 _ => (it) => namesFromFile.Contains(it.Name) ||
                 wildNames(Path.GetFileName(it.Name)),
             };
-
-        var ins = My.OpenZip.Invoke(new My.OpenZipParam("'zip2 -t?' for help"));
-        if (ins == Stream.Null)
-        {
-            Console.Error.WriteLine($"Open {My.ZipFilename} failed.");
-            return false;
-        }
 
         var sumThe = My.OpenCompressedFile.Invoke(new My.OpenParam(ins, My.ZipFilename))
             .Where((it) => checkZipEntryName(it))

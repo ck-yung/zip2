@@ -7,63 +7,79 @@ static internal partial class My
 {
     static internal string ZipFilename { get; private set; } = "";
 
-    internal record OpenZipParam(string ErrorMessage, bool IsExisted = true);
-    static internal IInvokeOption<OpenZipParam, Stream> OpenZip
-        = new SingleValueOption<OpenZipParam, Stream>(
+    internal record OpenZipParam(string[] Args, bool IsExisted = true);
+    internal record OpenZipResult(string[] Args, Stream Stream);
+
+    static OpenZipResult GetOpenZip(string zipFilename, IEnumerable<string> args, bool isExisted)
+    {
+        var gg = args
+            .Select((it) => it.Split(','))
+            .SelectMany((it) => it)
+            .Where((it) => it.Length > 0)
+            .Distinct();
+        if (isExisted)
+        {
+            if (false == File.Exists(zipFilename))
+            {
+                var dir3 = Path.GetDirectoryName(zipFilename);
+                if (string.IsNullOrEmpty(dir3)) dir3 = ".";
+                if (dir3.EndsWith(':'))
+                {
+                    dir3 += '.';
+                    dir3 += Path.DirectorySeparatorChar;
+                }
+                if (!Directory.Exists(dir3))
+                {
+                    throw new MyArgumentException($"Dir '{dir3}' is NOT found.");
+                }
+                var name3 = Path.GetFileName(zipFilename);
+                if (string.IsNullOrEmpty(name3))
+                {
+                    throw new MyArgumentException($"'{zipFilename}' is NOT filename.");
+                }
+                var aa = Directory.GetFiles(dir3, name3);
+                if ((aa == null) || (aa.Length == 0))
+                {
+                    throw new MyArgumentException(
+                        $"No file is matched to '{zipFilename}'");
+                }
+                if (aa.Length > 1)
+                {
+                    throw new MyArgumentException(
+                        $"{aa.Length} files are matched to '{zipFilename}'");
+                }
+                zipFilename = aa[0];
+            }
+            if (false == File.Exists(zipFilename))
+            {
+                throw new MyArgumentException(
+                    $"But input '{zipFilename}' is NOT found!");
+            }
+            return new OpenZipResult(gg.ToArray(), File.OpenRead(zipFilename));
+        }
+        if (File.Exists(zipFilename))
+            throw new MyArgumentException(
+                $"But output '{zipFilename}' does EXIST!");
+        return new OpenZipResult(gg.ToArray(), File.Create(zipFilename));
+    }
+    static internal IInvokeOption<OpenZipParam, OpenZipResult> OpenZip
+        = new SingleValueOption<OpenZipParam, OpenZipResult>(
             "--file", help: "ZIP-FILENAME", shortcut: "-f",
-            init: (it) => throw new MyArgumentException(
-                "Zip file is required by '--file' or '-f'." +
-                Environment.NewLine + it.ErrorMessage),
+            init: (it) =>
+            {
+                if (it.Args.Length == 0)
+                    throw new ArgumentException($"Syntax: {nameof(zip2)} -?");
+                ZipFilename = it.Args[0];
+                return GetOpenZip(ZipFilename, it.Args.Skip(1), it.IsExisted);
+            },
             resolve: (the, arg) =>
             {
-                if (string.IsNullOrEmpty(arg)) return null;
+                if (string.IsNullOrEmpty(arg) || arg.Length == 0)
+                    throw new ArgumentException($"Filename is required to '{the.Name}','{the.Shortcut}'");
                 return (it) =>
                 {
                     ZipFilename = arg;
-                    if (it.IsExisted)
-                    {
-                        if (false == File.Exists(ZipFilename))
-                        {
-                            var dir3 = Path.GetDirectoryName(ZipFilename);
-                            if (string.IsNullOrEmpty(dir3)) dir3 = ".";
-                            if (dir3.EndsWith(':'))
-                            {
-                                dir3 += '.';
-                                dir3 += Path.DirectorySeparatorChar;
-                            }
-                            if (!Directory.Exists(dir3))
-                            {
-                                throw new MyArgumentException($"Dir '{dir3}' is NOT found.");
-                            }
-                            var name3 = Path.GetFileName(ZipFilename);
-                            if (string.IsNullOrEmpty(name3))
-                            {
-                                throw new MyArgumentException($"'{ZipFilename}' is NOT filename.");
-                            }
-                            var aa = Directory.GetFiles(dir3, name3);
-                            if ((aa==null) || (aa.Length==0))
-                            {
-                                throw new MyArgumentException(
-                                    $"No file is matched to '{ZipFilename}'");
-                            }
-                            if (aa.Length > 1)
-                            {
-                                throw new MyArgumentException(
-                                    $"{aa.Length} files are matched to '{ZipFilename}'");
-                            }
-                            ZipFilename = aa[0];
-                        }
-                        if (false == File.Exists(ZipFilename))
-                        {
-                            throw new MyArgumentException(
-                                $"But input '{ZipFilename}' is NOT found!");
-                        }
-                        return File.OpenRead(ZipFilename);
-                    }
-                    if (File.Exists(arg))
-                        throw new MyArgumentException(
-                            $"But output '{arg}' does EXIST!");
-                    return File.Create(arg);
+                    return GetOpenZip(ZipFilename, it.Args, it.IsExisted);
                 };
             });
 
