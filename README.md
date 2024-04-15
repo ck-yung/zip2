@@ -24,7 +24,7 @@ dir2 src -bsk --within 2hour | zip2 -cf ..\new.zip -T -
 ```
 * [Link to tool ```dir2```](https://www.nuget.org/packages/dir2)
 
-### On-line Help
+## On-line Help
 List ```zip2 -t?```
 
 Extract ```zip2 -x?```
