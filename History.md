@@ -1,5 +1,7 @@
 # HISTORY
 
+[Link to Syntax](https://github.com/ck-yung/zip2/blob/main/Syntax.md)
+
 ## v2.1.1.0
 1. Add feature for command ```List``` as the default command.
 2. Option output dir ```--out-dir```,```-O``` takes ```=``` for console output (stdout).
