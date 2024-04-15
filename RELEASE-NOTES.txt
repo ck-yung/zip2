@@ -8,4 +8,4 @@ e.g. zip2 -tvf obj\backup*.zip
 3. Option "--show-crc" is added to List command.
 4. Shadow filenames are used to Create and Extract commands.
 5. Add option "--no-time" to Exract command.
-See <https://github.com/ck-yung/zip2/blob/main/History.txt> for feature history.
+See <https://github.com/ck-yung/zip2/blob/main/History.md> for feature history.
