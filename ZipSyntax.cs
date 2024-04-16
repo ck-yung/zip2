@@ -11,7 +11,9 @@ public class Syntax : ICommandMaker
         {
             var tmp = new StringBuilder();
             foreach (var (attr, type) in Helper.GetMainCommands()
-                .Where((it) => it.Item2.Name != nameof(Syntax)))
+                .Where((it) => it.Item2.Name != nameof(Syntax))
+                .Where((it) => it.Item2.Name != "Version")
+                )
             {
                 if (string.IsNullOrEmpty(attr.Shortcut))
                 {
@@ -25,15 +27,14 @@ public class Syntax : ICommandMaker
                 }
                 tmp.AppendLine();
             }
-            tmp.Append(
-            """
-            For example:
-            Extract a zip to dir 'restoreToDir'
-              zip2 -xf ..\backup.zip -O restoreToDir
+            tmp.Append("""
+                Help to create  : zip2 -c?
+                Help to list    : zip2 -t?
+                Help to extract : zip2 -x?
 
-            Store files, which timestamp is within 2 days, into a new zip file.
-              dir2 src\ -bsk --within 2day | zip2 -cf ..\new.zip -3T -
-            """);
+                https://github.com/ck-yung/zip2/blob/master/README.md
+                """
+                );
             Console.Write(tmp.ToString());
             return true;
         });

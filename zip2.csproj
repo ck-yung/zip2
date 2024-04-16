@@ -35,8 +35,8 @@
   <PropertyGroup>
     <Title>zip2</Title>
     <PackageId>zip2</PackageId>
-    <PackageVersion>2.1.1.0</PackageVersion>
-    <Version>2.1.1.0</Version>
+    <PackageVersion>2.1.2.0</PackageVersion>
+    <Version>2.1.2.0</Version>
     <Authors>Yung, Chun Kau</Authors>
     <Description>Command line tool for ZIP/RAR file.</Description>
     <Summary>
