@@ -2,6 +2,12 @@
 
 [Link to Syntax](https://github.com/ck-yung/zip2/blob/main/Syntax.md)
 
+## v2.1.2.0 (Coming)
+1. Read console input (stdin) to "List" and "Extract" command if "--file" is -
+2. Write console output (stdout) to "Create" command if "--file" is -
+3. ??? Handle "WILD" other than "FILE" to "Create" command.
+4. Support ```.tar``` and ```.tar.gz```
+
 ## v2.1.1.0
 1. Add feature for command ```List``` as the default command.
 2. Option output dir ```--out-dir```,```-O``` takes ```=``` for console output (stdout).

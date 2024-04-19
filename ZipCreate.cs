@@ -1,5 +1,9 @@
 using ICSharpCode.SharpZipLib.Zip;
+using SharpCompress.Common;
+using SharpCompress.Writers.Tar;
 using System.Collections.Immutable;
+using System.Linq;
+using System.Text;
 
 namespace zip2;
 
@@ -103,34 +107,58 @@ public class Create : ICommandMaker
             return false;
         }
 
-        (args, var ins) = My.OpenZip.Invoke(new My.OpenZipParam(args, IsExisted: false));
-        if (ins == Stream.Null)
+        (args, var outputStream) = My.OpenZip.Invoke(new My.OpenZipParam(args, IsExisted: false));
+        if (outputStream == Stream.Null)
         {
             Console.WriteLine("Create failed.");
             return false;
         }
 
-        ins.Close();
-        var extThe = Path.GetExtension(My.ZipFilename).ToLower();
-        if (extThe != ".zip")
+        outputStream.Close();
+        var newFileType = SupportingFileExt(My.ZipFilename.ToLower());
+        if (SupportType.UNKNOWN == newFileType)
         {
             File.Delete(My.ZipFilename);
             throw new MyArgumentException(
-                $"Ext should be '.zip' but '{extThe}' is found!");
+                $"File ext of '{My.ZipFilename}' is NOT supported!");
         }
 
         string shadowName = My.ZipFilename +
             $".{Guid.NewGuid()}.zip2.tmp";
         File.Move(My.ZipFilename, shadowName);
-        ins = File.OpenWrite(shadowName);
+        outputStream = File.OpenWrite(shadowName);
+        int cntAdded = (newFileType) switch
+        {
+            SupportType.ZIP => CreateNewZipFile(outputStream,
+            args.Concat(My.FilesFrom.Invoke(true))),
+            SupportType.TAR => CreateNewTarFile( outputStream, isGzipCompress: false,
+            paths: args.Concat(My.FilesFrom.Invoke(true))),
+            SupportType.TARGZ => CreateNewTarFile(outputStream, isGzipCompress: true,
+            paths: args.Concat(My.FilesFrom.Invoke(true))),
+            _ => 0,
+        };
+        My.TotalText.Invoke($"Add OK:{cntAdded}");
 
+        outputStream.Close();
+        File.Move(shadowName, My.ZipFilename);
+        if (1 > cntAdded && File.Exists(My.ZipFilename))
+        {
+            My.TotalText.Invoke($"Clean {My.ZipFilename}");
+            File.Delete(My.ZipFilename);
+        }
+        return true;
+    }
+
+    static int CreateNewZipFile(Stream outs,
+        IEnumerable<string> paths)
+    {
         int cntAdded = 0;
         var buffer1 = new byte[32 * 1024];
         var buffer2 = new byte[32 * 1024];
-        var outZs = new ZipOutputStream(ins);
+        var outZs = new ZipOutputStream(outs);
         My.CompressLevel.Invoke(outZs);
         var zipFullPath = Path.GetFullPath(My.ZipFilename);
-        foreach (var path in args.Concat(My.FilesFrom.Invoke(true))
+        foreach (var pathThe in paths
             .Select((it) => Helper.ToLocalFilename(it))
             .Where((it) => File.Exists(it))
             .Where((it) =>
@@ -140,19 +168,19 @@ public class Create : ICommandMaker
             })
             .Distinct())
         {
-            var sizeThe = (new FileInfo(path)).Length;
-            var entry = new ZipEntry(Helper.ToStandFilename(path))
+            var sizeThe = (new FileInfo(pathThe)).Length;
+            var entry = new ZipEntry(Helper.ToStandFilename(pathThe))
             {
-                DateTime = File.GetLastWriteTime(path),
+                DateTime = File.GetLastWriteTime(pathThe),
                 Size = sizeThe,
             };
 
             long writtenSize = 0L;
             int readSize = 0;
             outZs.PutNextEntry(entry); // TODO: isTranscational: true
-            My.Verbose.Invoke(path);
+            My.Verbose.Invoke(pathThe);
             byte[] buffer = new byte[32 * 1024];
-            using (FileStream fs = File.OpenRead(path))
+            using (FileStream fs = File.OpenRead(pathThe))
             {
                 try
                 {
@@ -196,15 +224,46 @@ public class Create : ICommandMaker
         }
         outZs.Finish();
         outZs.Close();
-        ins.Close();
-        My.TotalText.Invoke($"Add OK:{cntAdded}");
+        return cntAdded;
+    }
 
-        File.Move(shadowName, My.ZipFilename);
-        if (1 > cntAdded && File.Exists(My.ZipFilename))
+    static int CreateNewTarFile(Stream outs,
+        bool isGzipCompress, IEnumerable<string> paths)
+    {
+        int cntAdded = 0;
+        var fileType = (isGzipCompress) ? CompressionType.GZip : CompressionType.None;
+        using (var oTar = new TarWriter(outs, new TarWriterOptions(
+            fileType, finalizeArchiveOnClose: false)
         {
-            My.TotalText.Invoke($"Clean {My.ZipFilename}");
-            File.Delete(My.ZipFilename);
+            ArchiveEncoding = new ArchiveEncoding { Default = Encoding.UTF8, },
+        }))
+        {
+            foreach (var pathThe in paths)
+            {
+                var infoThe = new FileInfo(pathThe);
+                if (true != infoThe.Exists) continue;
+                My.Verbose.Invoke(pathThe);
+                var inps = File.OpenRead(pathThe);
+                oTar.Write(pathThe, inps, infoThe.LastWriteTimeUtc, infoThe.Length);
+                inps.Close();
+                cntAdded += 1;
+            }
         }
-        return true;
+        return cntAdded;
+    }
+
+    enum SupportType
+    {
+        ZIP,
+        TAR,
+        TARGZ,
+        UNKNOWN,
+    }
+    static SupportType SupportingFileExt(string arg)
+    {
+        if (arg.EndsWith(".zip")) return SupportType.ZIP;
+        if (arg.EndsWith(".tar")) return SupportType.TAR;
+        if (arg.EndsWith(".tar.gz")) return SupportType.TARGZ;
+        return SupportType.UNKNOWN;
     }
 }

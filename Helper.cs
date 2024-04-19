@@ -1,6 +1,7 @@
 using ICSharpCode.SharpZipLib.Zip;
 using SharpCompress.Archives.Rar;
 using System.Collections.Immutable;
+using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -207,14 +208,26 @@ internal class MyZipEntry
 {
     static public IEnumerable<MyZipEntry> GetEntries(Stream stream, string path)
     {
-        var extThe = Path.GetExtension(path).ToLower();
-        return (extThe) switch
+        var nameThe = path.ToLower();
+        if (nameThe.EndsWith(".zip"))
         {
-            ".zip" => new ZipInputStream(stream).MyZipEntries(),
-            ".rar" => My.GetRarEntries.Invoke(new My.GetRarEntriesParam(stream, path)),
-            _ => throw new MyArgumentException(
-                $"'{extThe}' is unknown extension"),
-        };
+            return new ZipInputStream(stream).MyZipEntries();
+        }
+        else if (nameThe.EndsWith(".rar"))
+        {
+            return My.GetRarEntries.Invoke(new My.GetRarEntriesParam(stream, path));
+        }
+        else if (nameThe.EndsWith(".tar"))
+        {
+            return My.GetTarEntries(stream, isGzCompressed: false);
+        }
+        else if (nameThe.EndsWith(".tar.gz"))
+        {
+            return My.GetTarEntries(stream, isGzCompressed: true);
+        }
+
+        throw new MyArgumentException(
+                $"File ext of '{path}' is unknown!");
     }
 
     public string Name { get; init; }
@@ -250,6 +263,33 @@ internal class MyZipEntry
         DateTime = arg.LastModifiedTime ?? DateTime.MinValue;
         Crc = arg.Crc;
         OpenStream = arg.OpenEntryStream;
+        CloseStream = (it) => it.Close();
+    }
+
+    public MyZipEntry(SharpCompress.Archives.Tar.TarArchiveEntry arg)
+    {
+        Name = arg.Key;
+        IsCrypted = arg.IsEncrypted;
+        IsFile = false == arg.IsDirectory;
+        Size = arg.Size;
+        CompressedSize = arg.CompressedSize;
+        DateTime = arg.LastModifiedTime ?? DateTime.MinValue;
+        Crc = arg.Crc;
+        OpenStream = () => arg.OpenEntryStream();
+        CloseStream = (it) => it.Close();
+    }
+
+    public MyZipEntry(SharpCompress.Common.Tar.TarEntry arg,
+        SharpCompress.Readers.IReader reader)
+    {
+        Name = arg.Key;
+        IsCrypted = arg.IsEncrypted;
+        IsFile = false == arg.IsDirectory;
+        Size = arg.Size;
+        CompressedSize = arg.CompressedSize;
+        DateTime = arg.LastModifiedTime ?? DateTime.MinValue;
+        Crc = arg.Crc;
+        OpenStream = () => reader.OpenEntryStream();
         CloseStream = (it) => it.Close();
     }
 }

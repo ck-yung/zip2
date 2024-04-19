@@ -75,8 +75,4 @@
   <ItemGroup>
     <EditorConfigFiles Remove="A:\Projects\zip2\.editorconfig" />
   </ItemGroup>
-
-  <ItemGroup>
-    <EditorConfigFiles Remove="A:\Projects\zip2\.editorconfig" />
-  </ItemGroup>
 </Project>
