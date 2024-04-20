@@ -202,17 +202,26 @@ static internal partial class My
                 .Select((it) => new MyZipEntry(it));
             });
 
-    static public IEnumerable<MyZipEntry> GetTarEntries(Stream stream)
+    static public IEnumerable<MyZipEntry> GetTarEntries(Stream stream,
+        bool isGZipCompressed)
     {
-        TarEntry? entry;
-        using (TarInputStream tis =
-            new(stream, System.Text.Encoding.UTF8))
+        TarInputStream tis;
+        if (isGZipCompressed)
         {
-            while (null != (entry = tis.GetNextEntry()))
-            {
-                if (entry.IsDirectory) continue;
-                yield return new MyZipEntry(entry, tis);
-            }
+            var iGz = new System.IO.Compression.GZipStream(
+                stream, System.IO.Compression.CompressionMode.Decompress);
+            tis = new(iGz, System.Text.Encoding.UTF8);
         }
+        else
+        {
+            tis = new(stream, System.Text.Encoding.UTF8);
+        }
+        TarEntry? entry;
+        while (null != (entry = tis.GetNextEntry()))
+        {
+            if (entry.IsDirectory) continue;
+            yield return new MyZipEntry(entry, tis);
+        }
+        tis.Close();
     }
 }

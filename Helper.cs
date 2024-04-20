@@ -224,7 +224,12 @@ internal class MyZipEntry
         else if (nameThe.EndsWith(".tar"))
         {
             Helper.ReducePentCent = (_, _) => "";
-            return My.GetTarEntries(stream);
+            return My.GetTarEntries(stream, isGZipCompressed: false);
+        }
+        else if (nameThe.EndsWith(".tar.gz") || nameThe.EndsWith(".tgz"))
+        {
+            Helper.ReducePentCent = (_, _) => "";
+            return My.GetTarEntries(stream, isGZipCompressed: true);
         }
         throw new MyArgumentException($"File ext of '{path}' is unknown!");
     }
