@@ -1,6 +1,7 @@
 using ICSharpCode.SharpZipLib.Zip;
 using SharpCompress.Archives.Rar;
 using System.Collections.Immutable;
+using System.IO;
 using System.Text;
 using static zip2.Helper;
 namespace zip2;
@@ -184,7 +185,7 @@ static internal partial class My
     static internal readonly IInvokeOption<OpenParam, IEnumerable<MyZipEntry>>
         OpenCompressedFile = new
         SingleValueOption<OpenParam, IEnumerable<MyZipEntry>>(
-            "--format", help: "auto | zip | rar",
+            "--format", help: "auto | zip | rar | tar | tgz",
             init: (arg) => MyZipEntry.GetEntries(arg.Stream, arg.Path),
             resolve: (the, arg) => (arg) switch
             {
@@ -193,6 +194,8 @@ static internal partial class My
                 "rar" => (it) => RarArchive.Open(it.Stream,
                     new SharpCompress.Readers.ReaderOptions()
                     { LeaveStreamOpen = true }).MyRarEntries(),
+                "tar" => (it) => My.GetTarEntries(it.Stream, isGZipCompressed: false),
+                "tgz" => (it) => My.GetTarEntries(it.Stream, isGZipCompressed: true),
                 _ => throw new MyArgumentException(
                     $"'{arg}' is bad to {the.Name}"),
             });
@@ -283,7 +286,7 @@ public class List : ICommandMaker
             return false;
         }
 
-        (args, var ins) = My.OpenZip.Invoke(new My.OpenZipParam(args));
+        (args, var ins, var close) = My.OpenZip.Invoke(new My.OpenZipParam(args));
         if (ins == Stream.Null)
         {
             Console.Error.WriteLine($"Open {My.ZipFilename} failed.");
@@ -316,7 +319,7 @@ public class List : ICommandMaker
             .Where((it) => My.IsFileFound.Invoke(it.Name))
             .Invoke(My.SelectDirStructure.Invoke(Non.e))
             .Invoke(My.SumZip.Invoke);
-        ins.Close();
+        close(ins);
         My.TotalText.Invoke(sumThe.ToString());
         return true;
     }

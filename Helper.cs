@@ -17,6 +17,9 @@ static class Helper
         private Non() { }
     }
 
+    static internal readonly string Stdin = "-";
+    static internal readonly string Stdout = "-";
+
     static internal readonly string ExeName;
     static internal readonly string ExeVersion;
     static internal readonly string ExeCopyright;
@@ -223,12 +226,10 @@ internal class MyZipEntry
         }
         else if (nameThe.EndsWith(".tar"))
         {
-            Helper.ReducePentCent = (_, _) => "";
             return My.GetTarEntries(stream, isGZipCompressed: false);
         }
         else if (nameThe.EndsWith(".tar.gz") || nameThe.EndsWith(".tgz"))
         {
-            Helper.ReducePentCent = (_, _) => "";
             return My.GetTarEntries(stream, isGZipCompressed: true);
         }
         throw new MyArgumentException($"File ext of '{path}' is unknown!");

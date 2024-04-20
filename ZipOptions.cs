@@ -9,7 +9,7 @@ static internal partial class My
     static internal string ZipFilename { get; private set; } = "";
 
     internal record OpenZipParam(string[] Args, bool IsExisted = true);
-    internal record OpenZipResult(string[] Args, Stream Stream);
+    internal record OpenZipResult(string[] Args, Stream Stream, Action<Stream> Close);
 
     static OpenZipResult GetOpenZip(string zipFilename, IEnumerable<string> args, bool isExisted)
     {
@@ -20,6 +20,10 @@ static internal partial class My
             .Distinct();
         if (isExisted)
         {
+            if (Helper.Stdin == zipFilename)
+            {
+                return new OpenZipResult(gg.ToArray(), Console.OpenStandardInput(), (_) => { });
+            }
             if (false == File.Exists(zipFilename))
             {
                 var dir3 = Path.GetDirectoryName(zipFilename);
@@ -56,16 +60,22 @@ static internal partial class My
                 throw new MyArgumentException(
                     $"But input '{zipFilename}' is NOT found!");
             }
-            return new OpenZipResult(gg.ToArray(), File.OpenRead(zipFilename));
+            return new OpenZipResult(gg.ToArray(), File.OpenRead(zipFilename), (s) => s.Close());
+        }
+        if (Helper.Stdout == zipFilename)
+        {
+            ((IOption)TotalText).Parse(new FlagedArg[] { new FlagedArg(true, "--total-off") });
+            VerboseImpl = (_) => { };
+            return new OpenZipResult(gg.ToArray(), Console.OpenStandardOutput(), (_) => { });
         }
         if (File.Exists(zipFilename))
             throw new MyArgumentException(
                 $"But output '{zipFilename}' does EXIST!");
-        return new OpenZipResult(gg.ToArray(), File.Create(zipFilename));
+        return new OpenZipResult(gg.ToArray(), File.Create(zipFilename), (s) => s.Close());
     }
     static internal IInvokeOption<OpenZipParam, OpenZipResult> OpenZip
         = new SingleValueOption<OpenZipParam, OpenZipResult>(
-            "--file", help: "ZIP-FILENAME", shortcut: "-f",
+            "--file", help: "ZIP-FILENAME, or, - if console", shortcut: "-f",
             init: (it) =>
             {
                 if (it.Args.Length == 0)
@@ -138,12 +148,15 @@ static internal partial class My
                 return (_) => ReadNamesFrom(arg);
             });
 
+    static internal Action<string> VerboseImpl { get; set; }
+    = (msg) => Console.WriteLine(msg);
+
     static internal IInvokeOption<string, Non> Verbose
         = new NoValueOption<string, Non>(
             "--verbose", shortcut: "-v",
             alt: (msg) =>
             {
-                Console.WriteLine(msg);
+                VerboseImpl(msg);
                 return Non.e;
             },
             init: (msg) => Non.e);
@@ -205,6 +218,7 @@ static internal partial class My
     static public IEnumerable<MyZipEntry> GetTarEntries(Stream stream,
         bool isGZipCompressed)
     {
+        Helper.ReducePentCent = (_, _) => "";
         TarInputStream tis;
         if (isGZipCompressed)
         {

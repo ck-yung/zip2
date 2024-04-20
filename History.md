@@ -8,7 +8,7 @@
 3. ??? Handle "WILD" other than "FILE" to "Create" command.
 4. Support ```.tar``` and ```.tar.gz```
 
-## v2.1.1.0
+## v2.1.1.0 (Released)
 1. Add feature for command ```List``` as the default command.
 2. Option output dir ```--out-dir```,```-O``` takes ```=``` for console output (stdout).
 3. New option ```--multi-vol```,```-m``` is added for RAR archive files.

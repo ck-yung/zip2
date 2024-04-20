@@ -157,7 +157,7 @@ public class Extract : ICommandMaker
             return false;
         }
 
-        (args, var ins) = My.OpenZip.Invoke(new My.OpenZipParam(args));
+        (args, var ins, var close) = My.OpenZip.Invoke(new My.OpenZipParam(args));
         if (ins == Stream.Null)
         {
             Console.WriteLine("Open failed.");
@@ -259,7 +259,7 @@ public class Extract : ICommandMaker
             })
             .Where(it => true == it)
             .Count();
-        ins.Close();
+        close(ins);
         My.TotalText.Invoke($"Extract OK:{count}");
         return true;
     }
