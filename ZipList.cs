@@ -78,7 +78,7 @@ static internal partial class My
                     textThe.Append(it.IsCrypted ? '*' : ' ');
                     textThe.Append(My.Crc32Opt.Invoke(it));
                     textThe.Append(
-                        $"{ReducePentCent(it.Size, it.CompressedSize)} ");
+                        ReducePentCent(it.Size, it.CompressedSize));
                     textThe.Append(My.SizeFormat.Invoke(it.Size));
                     textThe.Append($"{it.DateTime:yyyy-MM-dd HH:mm} ");
                     textThe.Append(it.Name);

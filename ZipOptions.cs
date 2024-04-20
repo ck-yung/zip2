@@ -1,7 +1,5 @@
+using ICSharpCode.SharpZipLib.Tar;
 using SharpCompress.Archives.Rar;
-using SharpCompress.Archives.Tar;
-using SharpCompress.Readers;
-using System.IO.Compression;
 using static zip2.Helper;
 
 namespace zip2;
@@ -204,24 +202,17 @@ static internal partial class My
                 .Select((it) => new MyZipEntry(it));
             });
 
-    static public IEnumerable<MyZipEntry> GetTarEntries(Stream stream, bool isGzCompressed)
+    static public IEnumerable<MyZipEntry> GetTarEntries(Stream stream)
     {
-        IEnumerable<MyZipEntry> GetTarGzEntries(IReader reader)
+        TarEntry? entry;
+        using (TarInputStream tis =
+            new(stream, System.Text.Encoding.UTF8))
         {
-            while (reader.MoveToNextEntry())
+            while (null != (entry = tis.GetNextEntry()))
             {
-                var a2 = (SharpCompress.Common.Tar.TarEntry) reader.Entry;
-                if (a2.IsDirectory) continue;
-                yield return new MyZipEntry(a2, reader);
+                if (entry.IsDirectory) continue;
+                yield return new MyZipEntry(entry, tis);
             }
         }
-        if (isGzCompressed)
-        {
-            var decGz = new GZipStream(stream, CompressionMode.Decompress);
-            return GetTarGzEntries(ReaderFactory.Open(decGz));
-        }
-        return TarArchive.Open(stream).Entries
-            .Where((it) => false == it.IsDirectory)
-            .Select((it) => new MyZipEntry(it));
     }
 }

@@ -1,7 +1,7 @@
+using ICSharpCode.SharpZipLib.Tar;
 using ICSharpCode.SharpZipLib.Zip;
 using SharpCompress.Archives.Rar;
 using System.Collections.Immutable;
-using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -163,7 +163,7 @@ static class Helper
         return (arg) => funcs.Any((it) => it.Match(arg).Success);
     }
 
-    static internal string ReducePentCent(long size, long compressedSize)
+    static internal string ReducePentCentImpl(long size, long compressedSize)
     {
         if (1 > size) return " 0";
         if (compressedSize > size) return " 0";
@@ -171,8 +171,11 @@ static class Helper
         var ratio = 1000 * compressedSize / size;
         ratio += 5; ratio /= 10;
         if (98 < ratio) return "99";
-        return $"{ratio,2}";
+        return $"{ratio,2} ";
     }
+
+    static internal Func<long, long, string> ReducePentCent { get; set; } =
+        (long size, long cmpSize) => ReducePentCentImpl(size, cmpSize);
 
     static internal string KiloSize(long size)
     {
@@ -215,19 +218,15 @@ internal class MyZipEntry
         }
         else if (nameThe.EndsWith(".rar"))
         {
-            return My.GetRarEntries.Invoke(new My.GetRarEntriesParam(stream, path));
+            return My.GetRarEntries.Invoke(
+                new My.GetRarEntriesParam(stream, path));
         }
         else if (nameThe.EndsWith(".tar"))
         {
-            return My.GetTarEntries(stream, isGzCompressed: false);
+            Helper.ReducePentCent = (_, _) => "";
+            return My.GetTarEntries(stream);
         }
-        else if (nameThe.EndsWith(".tar.gz"))
-        {
-            return My.GetTarEntries(stream, isGzCompressed: true);
-        }
-
-        throw new MyArgumentException(
-                $"File ext of '{path}' is unknown!");
+        throw new MyArgumentException($"File ext of '{path}' is unknown!");
     }
 
     public string Name { get; init; }
@@ -266,31 +265,17 @@ internal class MyZipEntry
         CloseStream = (it) => it.Close();
     }
 
-    public MyZipEntry(SharpCompress.Archives.Tar.TarArchiveEntry arg)
+    public MyZipEntry(TarEntry arg, TarInputStream ins)
     {
-        Name = arg.Key;
-        IsCrypted = arg.IsEncrypted;
+        Name = arg.Name;
+        IsCrypted = false;
         IsFile = false == arg.IsDirectory;
         Size = arg.Size;
-        CompressedSize = arg.CompressedSize;
-        DateTime = arg.LastModifiedTime ?? DateTime.MinValue;
-        Crc = arg.Crc;
-        OpenStream = () => arg.OpenEntryStream();
-        CloseStream = (it) => it.Close();
-    }
-
-    public MyZipEntry(SharpCompress.Common.Tar.TarEntry arg,
-        SharpCompress.Readers.IReader reader)
-    {
-        Name = arg.Key;
-        IsCrypted = arg.IsEncrypted;
-        IsFile = false == arg.IsDirectory;
-        Size = arg.Size;
-        CompressedSize = arg.CompressedSize;
-        DateTime = arg.LastModifiedTime ?? DateTime.MinValue;
-        Crc = arg.Crc;
-        OpenStream = () => reader.OpenEntryStream();
-        CloseStream = (it) => it.Close();
+        CompressedSize = arg.Size;
+        DateTime = arg.ModTime.ToLocalTime();
+        Crc = 0;
+        OpenStream = () => ins;
+        CloseStream = (_) => { };
     }
 }
 
@@ -328,7 +313,7 @@ internal class SumZipEntry
             rtn.Append(IsCrypted ? '*' : ' ');
             rtn.Append(My.Crc32Opt.Invoke(null));
             var sizeThe = (FileSize > 0) ? FileSize : CompressedSize;
-            rtn.Append($"{ReducePentCent(Size, sizeThe)} ");
+            rtn.Append(ReducePentCent(Size, sizeThe));
             rtn.Append(My.SizeFormat.Invoke(Size));
             rtn.Append($"{DateTime:yyyy-MM-dd HH:mm} ");
             rtn.Append($"- ");
