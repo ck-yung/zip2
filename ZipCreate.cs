@@ -1,6 +1,5 @@
 using ICSharpCode.SharpZipLib.Tar;
 using ICSharpCode.SharpZipLib.Zip;
-using SharpCompress.Archives.Rar;
 using System.Collections.Immutable;
 using System.IO.Compression;
 using System.Text;
@@ -121,6 +120,9 @@ public class Create : ICommandMaker
             ["-1"] = new[] { "--level", "faster" },
             ["-2"] = new[] { "--level", "fast" },
             ["-3"] = new[] { "--level", "smallest" },
+            ["-Z"] = new[] { "--format", "zip" },
+            ["-A"] = new[] { "--format", "tar" },
+            ["-G"] = new[] { "--format", "tgz" },
         }.ToImmutableDictionary();
 
     class CommandThe : MyCommand
