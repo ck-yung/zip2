@@ -130,6 +130,8 @@ public class Extract : ICommandMaker
                 "--verbose", "--name-only", "--total-off"},
             ["-Z"] = new string[] { "--format", "zip" },
             ["-R"] = new string[] { "--format", "rar" },
+            ["-A"] = new string[] { "--format", "tar" },
+            ["-G"] = new string[] { "--format", "tgz" },
         }.ToImmutableDictionary();
 
     class CommandThe : MyCommand

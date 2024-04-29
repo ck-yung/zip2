@@ -1,7 +1,6 @@
 using ICSharpCode.SharpZipLib.Zip;
 using SharpCompress.Archives.Rar;
 using System.Collections.Immutable;
-using System.IO;
 using System.Text;
 using static zip2.Helper;
 namespace zip2;
@@ -257,10 +256,11 @@ public class List : ICommandMaker
     static readonly ImmutableDictionary<string, string[]> MyShortcuts =
         new Dictionary<string, string[]>
         {
-            ["-b"] = new string[] {
-                "--verbose", "--name-only", "--total-off"},
-            ["-Z"] = new string[] { "--format", "zip"},
-            ["-R"] = new string[] { "--format", "rar" },
+            ["-b"] = ["--verbose", "--name-only", "--total-off"],
+            ["-Z"] = ["--format", "zip"],
+            ["-R"] = ["--format", "rar"],
+            ["-A"] = ["--format", "tar"],
+            ["-G"] = ["--format", "tgz"],
         }.ToImmutableDictionary();
 
     class CommandThe : MyCommand

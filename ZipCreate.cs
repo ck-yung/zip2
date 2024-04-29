@@ -19,36 +19,31 @@ static internal partial class My
             resolve: (the, arg) =>
             {
                 if (string.IsNullOrEmpty(arg)) return null;
-                switch (arg)
+                return arg switch
                 {
-                    case "storage":
-                        return (it) =>
-                        {
-                            it.SetLevel(0);
-                            return 0;
-                        };
-                    case "faster":
-                        return (it) =>
-                        {
-                            it.SetLevel(3);
-                            return 3;
-                        };
-                    case "fast":
-                        return (it) =>
-                        {
-                            it.SetLevel(6);
-                            return 6;
-                        };
-                    case "smallest":
-                        return (it) =>
-                        {
-                            it.SetLevel(9);
-                            return 9;
-                        };
-                    default:
-                        throw new MyArgumentException(
-                            $"'{arg}' is bad to '{the.Name}'");
-                }
+                    "storage" => (it) =>
+                    {
+                        it.SetLevel(0);
+                        return 0;
+                    },
+                    "faster" => (it) =>
+                    {
+                        it.SetLevel(3);
+                        return 3;
+                    },
+                    "fast" => (it) =>
+                    {
+                        it.SetLevel(6);
+                        return 6;
+                    },
+                    "smallest" => (it) =>
+                    {
+                        it.SetLevel(9);
+                        return 9;
+                    },
+                    _ => throw new MyArgumentException(
+                        $"'{arg}' is bad to '{the.Name}'"),
+                };
             });
 
     internal record CreateFileParam(Stream Stream, IEnumerable<string> Paths);
@@ -72,24 +67,21 @@ static internal partial class My
                 {
                     return Create.MakeTar(param, isGzipCompressed: true);
                 }
-                throw new MyArgumentException($"File ext of '{ZipFilename}' is unknown!");
+                throw new MyArgumentException(
+                    $"File ext of '{ZipFilename}' is unknown!");
             },
             resolve: (the, arg) =>
             {
-                switch (arg)
+                return arg switch
                 {
-                    case "zip":
-                        return (param) => Create.MakeZip(param);
-                    case "tar":
-                        return (param) => Create.MakeTar(param
-                            , isGzipCompressed: false);
-                    case "tgz":
-                        return (param) => Create.MakeTar(param
-                            , isGzipCompressed: true);
-                    default:
-                        throw new MyArgumentException(
-                            $"'{arg}' is bad to '{the.Name}'");
-                }
+                    "zip" => (param) => Create.MakeZip(param),
+                    "tar" => (param) => Create.MakeTar(
+                        param, isGzipCompressed: false),
+                    "tgz" => (param) => Create.MakeTar(
+                        param, isGzipCompressed: true),
+                    _ => throw new MyArgumentException(
+                        $"'{arg}' is bad to '{the.Name}'"),
+                };
             });
 }
 
@@ -103,26 +95,26 @@ public class Create : ICommandMaker
         return new CommandThe();
     }
 
-    static readonly ImmutableArray<IOption> MyOptions = new IOption[]
-    {
+    static readonly ImmutableArray<IOption> MyOptions =
+    [
         (IOption) My.Verbose,
         (IOption) My.TotalText,
         (IOption) My.CompressLevel,
         (IOption) My.FilesFrom,
         (IOption) My.CreateFileFormat,
         (IOption) My.OpenZip,
-    }.ToImmutableArray();
+    ];
 
     static readonly ImmutableDictionary<string, string[]> MyShortcutArrays =
         new Dictionary<string, string[]>
         {
-            ["-0"] = new[] { "--level", "storage" },
-            ["-1"] = new[] { "--level", "faster" },
-            ["-2"] = new[] { "--level", "fast" },
-            ["-3"] = new[] { "--level", "smallest" },
-            ["-Z"] = new[] { "--format", "zip" },
-            ["-A"] = new[] { "--format", "tar" },
-            ["-G"] = new[] { "--format", "tgz" },
+            ["-0"] = ["--level", "storage"],
+            ["-1"] = ["--level", "faster"],
+            ["-2"] = ["--level", "fast"],
+            ["-3"] = ["--level", "smallest"],
+            ["-Z"] = ["--format", "zip"],
+            ["-A"] = ["--format", "tar"],
+            ["-G"] = ["--format", "tgz"],
         }.ToImmutableDictionary();
 
     class CommandThe : MyCommand
@@ -206,11 +198,11 @@ public class Create : ICommandMaker
             })
             .Distinct())
         {
-            var sizeThe = (new FileInfo(path)).Length;
+            var infoThe = new FileInfo(path);
             var entry = new ZipEntry(Helper.ToStandFilename(path))
             {
-                DateTime = File.GetLastWriteTime(path),
-                Size = sizeThe,
+                DateTime = infoThe.LastWriteTimeUtc,
+                Size = infoThe.Length,
             };
 
             long writtenSize = 0L;
@@ -299,7 +291,7 @@ public class Create : ICommandMaker
             var infoThe = new FileInfo(path);
             var a2 = TarEntry.CreateTarEntry(Helper.ToStandFilename(path));
             a2.Size = infoThe.Length;
-            a2.ModTime = infoThe.LastWriteTime.ToUniversalTime();
+            a2.ModTime = infoThe.LastWriteTimeUtc;
             a2.GroupId = 201;
             a2.UserId = 101;
             a2.GroupName = "default";
@@ -319,7 +311,7 @@ public class Create : ICommandMaker
                     bool isBuffer1Read = true;
                     var taskRead = fs.ReadAsync(buffer1, 0, buffer1.Length);
                     var taskWrite = Stream.Null.WriteAsync(buffer2, 0, 0);
-                    while (true)
+                    while (writtenSize <= infoThe.Length)
                     {
                         taskWrite.Wait();
                         taskRead.Wait();
@@ -339,6 +331,7 @@ public class Create : ICommandMaker
                         }
                         writtenSize += readSize;
                     }
+                    // TODO: check if writtenSize vs infoThe.Length
                     cntAdded += 1;
                 }
                 catch (ZipException zipEe)

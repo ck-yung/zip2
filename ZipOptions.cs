@@ -64,8 +64,8 @@ static internal partial class My
         }
         if (Helper.Stdout == zipFilename)
         {
-            ((IOption)TotalText).Parse(new FlagedArg[] { new FlagedArg(true, "--total-off") });
-            VerboseImpl = (_) => { };
+            My.TotalTextImpl = (msg) => Console.Error.WriteLine(msg);
+            My.VerboseImpl = (msg) => Console.Error.WriteLine(msg);
             return new OpenZipResult(gg.ToArray(), Console.OpenStandardOutput(), (_) => { });
         }
         if (File.Exists(zipFilename))
@@ -171,12 +171,15 @@ static internal partial class My
             },
             alt: (msg) => Non.e);
 
+    static internal Action<string> TotalTextImpl { get; set; }
+    = (msg) => Console.WriteLine(msg);
+
     static internal IInvokeOption<string, Non> TotalText
         = new NoValueOption<string, Non>(
             "--total-off",
             init: (msg) =>
             {
-                Console.WriteLine(msg);
+                TotalTextImpl(msg);
                 return Non.e;
             },
             alt: (msg) => Non.e);
