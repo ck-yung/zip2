@@ -168,12 +168,12 @@ static class Helper
 
     static internal string ReducePentCentImpl(long size, long compressedSize)
     {
-        if (1 > size) return " 0";
-        if (compressedSize > size) return " 0";
+        if (1 > size) return " 0 ";
+        if (compressedSize > size) return " 0 ";
         compressedSize = size - compressedSize;
         var ratio = 1000 * compressedSize / size;
         ratio += 5; ratio /= 10;
-        if (98 < ratio) return "99";
+        if (98 < ratio) return "99 ";
         return $"{ratio,2} ";
     }
 
