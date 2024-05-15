@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Runtime.InteropServices;
+using static zip2.Helper;
 
 namespace zip2;
 
@@ -29,24 +30,28 @@ static internal partial class My
                     Stream: File.Create(arg.Shadow), Close: (s) => s.Close());
             });
 
-    static internal readonly IInvokeOption<bool, Func<string, string>> ToOutDir
-        = new SingleValueOption<bool, Func<string, string>>(
+    static internal readonly IInvokeOption<string, Func<string, string>> ToOutDir
+        = new SingleValueOption<string, Func<string, string>>(
             "--out-dir", help: "OUTPUT-DIR (- to ZIP-FILENAME, = to console)",
             shortcut: "-O",
             init: (_) => (it) => it,
             resolve: (the, arg) =>
             {
                 if (string.IsNullOrEmpty(arg)) return null;
-
                 if (arg == "-")
                 {
-                    arg = Path.GetFileNameWithoutExtension(
-                        ZipFilename) ?? string.Empty;
-                    if (string.IsNullOrEmpty(arg))
-                        throw new MyArgumentException("But --file is NOT set!");
-                    return (_) => (path) => Path.Combine(arg, path);
+                    return (zipName) =>
+                    {
+                        var zipNameWoExt = Path.GetFileNameWithoutExtension(
+                            zipName) ?? string.Empty;
+                        if (string.IsNullOrEmpty(zipNameWoExt))
+                        {
+                            throw new MyArgumentException(
+                                $"\"{the.Name} {arg}\" but input '{zipName}' is given!");
+                        }
+                        return (path) => Path.Combine(zipNameWoExt, path);
+                    };
                 }
-
                 if (arg == "=")
                 {
                     Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -59,7 +64,6 @@ static internal partial class My
                     });
                     return (_) => (path) => path;
                 }
-
                 return (_) => (path) => Path.Combine(arg, path);
             });
 
@@ -187,7 +191,7 @@ public class Extract : ICommandMaker
 
         var buffer1 = new byte[32 * 1024];
         var buffer2 = new byte[32 * 1024];
-        var toOutDir = My.ToOutDir.Invoke(true);
+        var toOutDir = My.ToOutDir.Invoke(My.ZipFilename);
 
         var creationTime = DateTime.Now;
         string tmpExt = $".{Guid.NewGuid()}.zip2.tmp";
