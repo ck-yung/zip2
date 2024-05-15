@@ -11,7 +11,7 @@ static internal partial class My
     internal record OpenZipParam(string[] Args, bool IsExisted = true);
     internal record OpenZipResult(string[] Args, Stream Stream, Action<Stream> Close);
 
-    static OpenZipResult GetOpenZip(string zipFilename, IEnumerable<string> args, bool isExisted)
+    static OpenZipResult GetOpenZip(IEnumerable<string> args, bool isExisted)
     {
         var gg = args
             .Select((it) => it.Split(','))
@@ -20,13 +20,13 @@ static internal partial class My
             .Distinct();
         if (isExisted)
         {
-            if (Helper.Stdin == zipFilename)
+            if (Helper.Stdin == ZipFilename)
             {
                 return new OpenZipResult(gg.ToArray(), Console.OpenStandardInput(), (_) => { });
             }
-            if (false == File.Exists(zipFilename))
+            if (false == File.Exists(ZipFilename))
             {
-                var dir3 = Path.GetDirectoryName(zipFilename);
+                var dir3 = Path.GetDirectoryName(ZipFilename);
                 if (string.IsNullOrEmpty(dir3)) dir3 = ".";
                 if (dir3.EndsWith(':'))
                 {
@@ -37,41 +37,43 @@ static internal partial class My
                 {
                     throw new MyArgumentException($"Dir '{dir3}' is NOT found.");
                 }
-                var name3 = Path.GetFileName(zipFilename);
+                var name3 = Path.GetFileName(ZipFilename);
                 if (string.IsNullOrEmpty(name3))
                 {
-                    throw new MyArgumentException($"'{zipFilename}' is NOT filename.");
+                    throw new MyArgumentException($"'{ZipFilename}' is NOT filename.");
                 }
                 var aa = Directory.GetFiles(dir3, name3);
                 if ((aa == null) || (aa.Length == 0))
                 {
                     throw new MyArgumentException(
-                        $"No file is matched to '{zipFilename}'");
+                        $"No file is matched to '{ZipFilename}'");
                 }
                 if (aa.Length > 1)
                 {
                     throw new MyArgumentException(
-                        $"{aa.Length} files are matched to '{zipFilename}'");
+                        $"{aa.Length} files are matched to '{ZipFilename}'");
                 }
-                zipFilename = aa[0];
+                ZipFilename = aa[0];
             }
-            if (false == File.Exists(zipFilename))
+            if (false == File.Exists(ZipFilename))
             {
                 throw new MyArgumentException(
-                    $"But input '{zipFilename}' is NOT found!");
+                    $"But input '{ZipFilename}' is NOT found!");
             }
-            return new OpenZipResult(gg.ToArray(), File.OpenRead(zipFilename), (s) => s.Close());
+            return new OpenZipResult(gg.ToArray(), File.OpenRead(ZipFilename), (s) => s.Close());
         }
-        if (Helper.Stdout == zipFilename)
+        #region if NOT isExisted
+        if (Helper.Stdout == ZipFilename)
         {
             My.TotalTextImpl = (msg) => Console.Error.WriteLine(msg);
             My.VerboseImpl = (msg) => Console.Error.WriteLine(msg);
             return new OpenZipResult(gg.ToArray(), Console.OpenStandardOutput(), (_) => { });
         }
-        if (File.Exists(zipFilename))
+        if (File.Exists(ZipFilename))
             throw new MyArgumentException(
-                $"But output '{zipFilename}' does EXIST!");
-        return new OpenZipResult(gg.ToArray(), File.Create(zipFilename), (s) => s.Close());
+                $"But output '{ZipFilename}' does EXIST!");
+        return new OpenZipResult(gg.ToArray(), File.Create(ZipFilename), (s) => s.Close());
+        #endregion
     }
     static internal IInvokeOption<OpenZipParam, OpenZipResult> OpenZip
         = new SingleValueOption<OpenZipParam, OpenZipResult>(
@@ -81,7 +83,7 @@ static internal partial class My
                 if (it.Args.Length == 0)
                     throw new MyArgumentException($"Syntax: {nameof(zip2)} -?");
                 ZipFilename = it.Args[0];
-                return GetOpenZip(ZipFilename, it.Args.Skip(1), it.IsExisted);
+                return GetOpenZip(it.Args.Skip(1), it.IsExisted);
             },
             resolve: (the, arg) =>
             {
@@ -91,7 +93,7 @@ static internal partial class My
                 return (it) =>
                 {
                     ZipFilename = arg;
-                    return GetOpenZip(ZipFilename, it.Args, it.IsExisted);
+                    return GetOpenZip(it.Args, it.IsExisted);
                 };
             });
 
