@@ -1,5 +1,5 @@
 # zip2
-**v2.1.1**
+**v2.2.0 [Preview]**
 
 ## Example:
 
@@ -61,6 +61,6 @@ zip2 [OPTION ..] -xf FILENAME.rar [OPTION ..] [WILD ..]
 * SharpZipLib v1.4.2
 * SharpCompress v0.34.2
 
-2021, 2023 (c) Yung, Chun Kau
+2021, 2025 (c) Yung, Chun Kau
 
 yung.chun.kau@gmail.com
