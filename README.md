@@ -1,5 +1,5 @@
 # zip2
-**v2.2.0 [Preview]**
+**v2.2.0**
 
 ## Example:
 
@@ -8,6 +8,7 @@
 zip2 ..\backup.zip
 zip2 ..\backup2.rar
 zip2 ..\test3.epub -Zv
+zip2 ..\backup4.tar
 ```
 
 ### Extract
@@ -15,6 +16,7 @@ zip2 ..\test3.epub -Zv
 zip2 ..\backup.zip -x
 zip2 ..\backup2.rar -x
 zip2 ..\test3.epub -Zx
+zip2 ..\backup4.tar
 ```
 
 ### Create Zip
@@ -39,28 +41,28 @@ zip2 -c NEW-ZIP-FILENAME [OPTION ..] [FILE ..]
 
 zip2 FILENAME.zip -tv [OPTION ..] [FILE ..]
 zip2 FILENAME.rar -tv [OPTION ..] [FILE ..]
+zip2 FILENAME.tar -tv [OPTION ..] [FILE ..]
 
 zip2 FILENAME.zip -x  [OPTION ..] [FILE ..]
 zip2 FILENAME.rar -x  [OPTION ..] [FILE ..]
+zip2 FILENAME.tar -x  [OPTION ..] [FILE ..]
 ```
 
 ### Specify Zip filename by option ```--file```
 ```
 zip2 [OPTION ..] -cf NEW-ZIP-FILENAME [OPTION ..] [FILE ..]
 
-zip2 [OPTION ..] -tvf FILENAME.zip [OPTION ..] [WILD ..]
-zip2 [OPTION ..] -tvf FILENAME.rar [OPTION ..] [WILD ..]
+zip2 [OPTION ..] -tvf FILENAME [OPTION ..] [WILD ..]
 
-zip2 [OPTION ..] -xf FILENAME.zip [OPTION ..] [WILD ..]
-zip2 [OPTION ..] -xf FILENAME.rar [OPTION ..] [WILD ..]
+zip2 [OPTION ..] -xf FILENAME [OPTION ..] [WILD ..]
 ```
 
 [Link to Feature Changes](https://github.com/ck-yung/zip2/blob/main/History.md)
 
 ## Credit:
 * SharpZipLib v1.4.2
-* SharpCompress v0.34.2
+* SharpCompress v0.50.1
 
-2021, 2025 (c) Yung, Chun Kau
+2021, 2026 (c) Yung, Chun Kau
 
 yung.chun.kau@gmail.com
