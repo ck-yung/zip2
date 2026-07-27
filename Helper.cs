@@ -201,7 +201,7 @@ static class Helper
         }
     }
 
-    static internal IEnumerable<MyZipEntry> MyRarEntries(this RarArchive inpRars)
+    static internal IEnumerable<MyZipEntry> MyRarEntries(this IRarArchive inpRars)
     {
         foreach (var entryThe in inpRars.Entries)
         {
@@ -258,9 +258,9 @@ internal class MyZipEntry
         CloseStream = (_) => { };
     }
 
-    public MyZipEntry(RarArchiveEntry arg)
+    public MyZipEntry(SharpCompress.Archives.IArchiveEntry arg)
     {
-        Name = arg.Key;
+        Name = arg.Key ?? "!?";
         IsCrypted = arg.IsEncrypted;
         IsFile = false == arg.IsDirectory;
         Size = arg.Size;

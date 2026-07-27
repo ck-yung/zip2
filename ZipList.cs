@@ -190,7 +190,7 @@ static internal partial class My
             {
                 "auto" => (it) => MyZipEntry.GetEntries(it.Stream, it.Path),
                 "zip" => (it) => new ZipInputStream(it.Stream).MyZipEntries(),
-                "rar" => (it) => RarArchive.Open(it.Stream,
+                "rar" => (it) => RarArchive.OpenArchive(it.Stream,
                     new SharpCompress.Readers.ReaderOptions()
                     { LeaveStreamOpen = true }).MyRarEntries(),
                 "tar" => (it) => My.GetTarEntries(it.Stream, isGZipCompressed: false),

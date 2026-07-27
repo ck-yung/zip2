@@ -191,7 +191,7 @@ static internal partial class My
     static internal IInvokeOption<GetRarEntriesParam, IEnumerable<MyZipEntry>> GetRarEntries
         = new NoValueOption<GetRarEntriesParam, IEnumerable<MyZipEntry>>(
             "--multi-vol", shortcut: "-m", help: "\t rar only",
-            init: (arg) => RarArchive.Open(arg.Stream)
+            init: (arg) => RarArchive.OpenArchive(arg.Stream)
             .Entries
             .Where((it) => false == it.IsDirectory)
             .Select((it) => new MyZipEntry(it)),
@@ -215,7 +215,8 @@ static internal partial class My
                         yield return File.OpenRead(LastRarArchivePath);
                     }
                 }
-                return RarArchive.Open(GetInputStreams(arg.Stream))
+                return RarArchive.OpenArchive(
+                    GetInputStreams(arg.Stream).ToList())
                 .Entries.Where((it) => false == it.IsDirectory)
                 .Select((it) => new MyZipEntry(it));
             });
