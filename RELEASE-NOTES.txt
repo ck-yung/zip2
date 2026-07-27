@@ -1,22 +1,20 @@
 See <https://github.com/ck-yung/zip2/blob/main/History.md> for feature history.
 
+
 v2.2.0.0
 1. Update to NET10.0
-2. Read console input (stdin) to "List" and "Extract" command if "--file" is -
-3. Write console output (stdout) to "Create" command if "--file" is -
-4. Support ```.tar``` and ```.tar.gz``` ("List" and "Extract" command)
+2. Update package SharpCompress to v0.50.1
+3. Read console input (stdin) to "List" and "Extract" command if "--file" is -
+4. Write console output (stdout) to "Create" command if "--file" is -
+5. Support ```.tar``` and ```.tar.gz```
 
-v2.1.2.0
-1. Read console input (stdin) to "List" and "Extract" command if "--file" is -
-2. Write console output (stdout) to "Create" command if "--file" is -
-3. ??? Handle "WILD" other than "FILE" to "Create" command.
-4. Support ```.tar``` and ```.tar.gz```
 
 v2.1.1.0
 1. Add feature for command "List" as the default command.
 2. Option output dir "--out-dir","-O" takes "=" for console output (stdout).
 3. New option "--multi-vol","-m" is added for RAR archive files.
 4. Take first command line arg as "ZIP-FILENAME" if "--file","-f" is NOT given
+
 
 v2.0.2.2
 1. Accept wild filename to '--file'. (Windows OS)
@@ -25,6 +23,7 @@ e.g. zip2 -tvf obj\backup*.zip
 3. Option "--show-crc" is added to List command.
 4. Shadow filenames are used to Create and Extract commands.
 5. Add option "--no-time" to Exract command.
+
 
 v2.1.0.0
 Update to .NET 8

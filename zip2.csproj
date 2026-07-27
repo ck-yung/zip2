@@ -38,7 +38,7 @@
     <PackageVersion>2.2.0.0</PackageVersion>
     <Version>2.2.0.0</Version>
     <Authors>Yung, Chun Kau</Authors>
-    <Description>Command line tool for ZIP/RAR file.</Description>
+    <Description>Command line tool for ZIP/RAR/TAR file.</Description>
     <Summary>
        C# source https://github.com/ck-yung/zip2
    </Summary>
