@@ -3,9 +3,10 @@
 [Link to Syntax](https://github.com/ck-yung/zip2/blob/main/Syntax.md)
 
 ## v2.2.0.0
-1. Read console input (stdin) to "List" and "Extract" command if "--file" is -
-2. Write console output (stdout) to "Create" command if "--file" is -
-3. Support ```.tar``` and ```.tar.gz``` ("List" and "Extract" command)
+1. Update to NET10.0
+2. Read console input (stdin) to "List" and "Extract" command if "--file" is -
+3. Write console output (stdout) to "Create" command if "--file" is -
+4. Support ```.tar``` and ```.tar.gz``` ("List" and "Extract" command)
 
 ## v2.1.1.0
 1. Add feature for command ```List``` as the default command.
